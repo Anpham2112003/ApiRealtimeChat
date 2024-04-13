@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 
 namespace Domain.Entites
 {
-    public class RoomChatJoin : BaseCollection
+    public class Friend 
     {
-       
         public ObjectId Id { get; set; }
-        public ObjectId UserId { get; set; }
-        public List<RoomJoin>? RoomJoins { get; set; }
-
+     
+        public Friend(ObjectId id)
+        {
+            Id = id;
+           
+        }
     }
 }

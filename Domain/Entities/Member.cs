@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace Domain.Entites
 {
-    public class FriendRoomChat : BaseCollection
+    public class Member 
     {
         public ObjectId Id { get; set; }
-        public ObjectId UserId { get; set; }
-        public ObjectId FriendId { get; set; }
+        public string? Name { get; set; }
+
     }
 }

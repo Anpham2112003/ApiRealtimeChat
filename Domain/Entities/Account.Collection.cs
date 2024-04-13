@@ -1,5 +1,5 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using Domain.Enums;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,16 +8,14 @@ using System.Threading.Tasks;
 
 namespace Domain.Entites
 {
-    public class UserCollection : BaseCollection,Change,SoftDelete
+    public class AccountCollection : BaseCollection, SoftDelete
     {
-       
         public ObjectId Id { get; set; }
-        public string? Name { get; set; }
         public string? Email { get; set; }
         public string? Password { get; set; }
-        public string? Avatar { get; set; }
+        //public AccountType AccountType { get; set; }
+        //public AccountSate AccountSate { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
         public bool IsDelete { get; set; }
         public DateTime DeletedAt { get; set; }
 

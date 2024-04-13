@@ -12,6 +12,6 @@ namespace Domain.Entites
         public ObjectId Id { get; set; }
 
         public ObjectId UserId { get; set; }
-        public List<>
+        public List<Group>?  Groups { get; set; }
     }
 }

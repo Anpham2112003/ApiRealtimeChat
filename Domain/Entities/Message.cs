@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Domain.Enums;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Domain.Entites
 {
-    public class Message : BaseCollection, SoftDelete,Change
+    public class Message : SoftDelete,Change
     {
         public ObjectId Id { get; set; }
         public ObjectId UserId { get; set; }
-        public string? UserName { get; set; }
+        public MessageType MessageType { get; set; }
         public string? Content {  get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

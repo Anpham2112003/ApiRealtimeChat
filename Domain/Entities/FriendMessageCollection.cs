@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Domain.Entites
 {
-    public class FriendCollection : BaseCollection
+    public class FriendMessageCollection : BaseCollection
     {
         public ObjectId Id { get; set; }
-        public ObjectId UserCollectionId {  get; set; }
-        public List<Friend>? Friends { get; set; }
-
+        public string? AscId { get; set; }
+        public bool IsBlock {  get; set; }
+        public List<Message>? Messages {  get; set; }
     }
 }

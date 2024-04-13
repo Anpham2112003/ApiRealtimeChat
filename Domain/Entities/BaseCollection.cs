@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Entites
 {
-    internal interface BaseCollection
+    public interface BaseCollection
     {
         ObjectId Id { get; set; }
     }
