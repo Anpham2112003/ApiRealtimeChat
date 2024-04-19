@@ -17,9 +17,11 @@ namespace Infrastructure.Repository
         
         public AccountRepository(IMongoDB mongoDB) : base(mongoDB)
         {
+            base._collection = mongoDB.GetCollection<AccountCollection>(nameof(AccountCollection));
+           
         }
 
-        public async Task<AccountCollection> FindAccountByEmail(string email)
+        public async Task<AccountCollection?> FindAccountByEmail(string email)
         {
 
             var query =  base._collection.AsQueryable();
@@ -29,11 +31,15 @@ namespace Infrastructure.Repository
             return result;
         }
 
-        public async Task RemoveAccountByEmail(string email)
+        public async Task SoftDeleteAccount(AccountCollection account)
         {
-            var filter = Builders<AccountCollection>.Filter.Eq(x => x.Email, email);
+            var filter = Builders<AccountCollection>.Filter.Eq(x => x.Email, account.Email);
+
+            var update = Builders<AccountCollection>.Update
+                .Set(x=>x.IsDelete,true)
+                .Set(x=>x.DeletedAt,DateTime.UtcNow);
       
-            await base._collection.FindOneAndDeleteAsync(filter);
+            await base._collection.FindOneAndUpdateAsync(filter, update);
         }
     }
 }

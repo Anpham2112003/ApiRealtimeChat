@@ -10,7 +10,9 @@ namespace Infrastructure.Repository.BaseRepository
 {
     public interface IAccountRepository:BaseRepository<AccountCollection>
     {
-        public Task<AccountCollection> FindAccountByEmail(string email);
-        public Task RemoveAccountByEmail(string email);
+        public Task<AccountCollection?> FindAccountByEmail(string email);
+        public Task SoftDeleteAccount(AccountCollection account);
+
+        
     }
 }

@@ -9,14 +9,14 @@ using System.Threading.Tasks;
 
 namespace Application.Ultils
 {
-    public class Mapper : Profile
+    public class MapData : Profile
     {
-        public Mapper()
+        public MapData()
         {
             CreateMap<CreateAccountCommand, AccountCollection>()
                 .ForMember(x => x.Id, m => m.MapFrom(x => x.Id))
                 .ForMember(x => x.Email, m => m.MapFrom(x => x.Email))
-                .ForMember(x => x.Password, m => m.MapFrom(x => x.Password))
+                .ForMember(x => x.Password, m => m.MapFrom(x => HashLibrary.GenerateHash(x.Password!)))
                 .ForMember(x => x.CreatedAt, m => m.MapFrom(x => x.Created))
                 .ForMember(x=>x.IsDelete,m=>m.MapFrom(x=>x.IsDelete))
                 .ForMember(x=>x.DeletedAt,m=>m.Ignore());

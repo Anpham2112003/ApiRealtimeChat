@@ -25,9 +25,17 @@ namespace Infrastructure.Unit0fWork
         public IAccountRepository accountRepository 
 
             =>   _accountRepository ??= new AccountRepository(_mongoDB);
-            
 
         private IAccountRepository? _accountRepository;
+
+        public IUserRepository userRepository 
+
+            => _userRepository ??= new UserRepository(_mongoDB);
+
+        private IUserRepository? _userRepository;
+
+
+
 
         public async Task<IClientSessionHandle> TransactionAsync()
         {

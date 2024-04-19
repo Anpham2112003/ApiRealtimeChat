@@ -15,6 +15,7 @@ namespace Infrastructure.Unit0fWork
     {
         public Task<IClientSessionHandle> TransactionAsync();
         public IAccountRepository accountRepository { get; }
+        public IUserRepository userRepository { get; }
 
      
     }

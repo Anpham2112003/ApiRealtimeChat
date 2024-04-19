@@ -10,7 +10,7 @@ namespace Domain.Settings
     {
         public const string Jwtseting = "Jwt";
 
-        public string? AcccessKey  { get; set; }
+        public string? AccessKey  { get; set; }
 
         public string? ReFreshKey {  get; set; }
 

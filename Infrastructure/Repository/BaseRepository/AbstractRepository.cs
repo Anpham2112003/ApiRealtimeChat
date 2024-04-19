@@ -13,14 +13,14 @@ namespace Infrastructure.Repository.BaseRepository
     public abstract class AbstractRepository<ICollection> :BaseRepository<ICollection> where ICollection : BaseCollection
     {
         private readonly IMongoDB _mongoDB;
-        protected readonly IMongoCollection<ICollection> _collection;
+        protected  IMongoCollection<ICollection> _collection { get; set; }
         protected AbstractRepository(IMongoDB mongoDB)
         {
             _mongoDB = mongoDB;
-            _collection = _mongoDB.GetCollection<ICollection>(nameof(ICollection));
+            
         }
 
-        public  async Task<IAsyncCursor<ICollection>> FindAsync(FilterDefinition<ICollection> filter)
+        public  async Task<IAsyncCursor<ICollection>?> FindAsync(FilterDefinition<ICollection> filter)
         {
             var result = await _collection.FindAsync(filter);  
             
