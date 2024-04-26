@@ -38,6 +38,6 @@ namespace Application.Ultils
 
         public static Result<T> Success()=>new Result<T>(true, Error.None);
         public static Result<T> Failuer(Error error) => new Result<T>(false, error);
-        public static Result<T> Success(T Data)=>  new Result<T>(true,Error.None,Data);
+        public static Result<T> Success(T? Data)=>  new Result<T>(true,Error.None,Data);
     }
 }

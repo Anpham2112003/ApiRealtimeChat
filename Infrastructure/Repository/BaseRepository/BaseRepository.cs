@@ -15,8 +15,8 @@ namespace Infrastructure.Repository.BaseRepository
         public Task InsertAsync(TCollection collection);
         public  Task<IAsyncCursor<TCollection>?> FindAsync(FilterDefinition<TCollection> filter);
         public  Task RemoveAsync(FilterDefinition<TCollection> filter);
-        public Task UpdateAsync(FilterDefinition<TCollection> filter, BsonDocument elements);
-
+        public Task<UpdateResult> UpdateAsync(FilterDefinition<TCollection> filter, UpdateDefinition<TCollection> update);
+        public Task FindOneAndUpdateAsync(FilterDefinition<TCollection> filter, BsonDocument elements);
 
     }
 }

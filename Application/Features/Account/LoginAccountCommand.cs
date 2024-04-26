@@ -1,6 +1,6 @@
 ﻿using Application.Errors;
-using Application.ResponeModel;
 using Application.Ultils;
+using Domain.ResponeModel;
 using Domain.Settings;
 using Infrastructure.Unit0fWork;
 using MediatR;

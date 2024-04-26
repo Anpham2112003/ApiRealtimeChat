@@ -37,9 +37,18 @@ namespace Infrastructure.Repository.BaseRepository
             await _collection.FindOneAndDeleteAsync(filter);
         }
 
-        public  async Task UpdateAsync(FilterDefinition<ICollection> filter, BsonDocument elements)
+        public async Task<UpdateResult> UpdateAsync(FilterDefinition<ICollection> filter, UpdateDefinition<ICollection> update)
+        {
+            var result = await _collection.UpdateOneAsync(filter, update);
+            
+            return result;
+        }
+
+        public async Task FindOneAndUpdateAsync(FilterDefinition<ICollection> filter, BsonDocument elements)
         {
             await _collection.FindOneAndUpdateAsync(filter, elements);
         }
+
+        
     }
 }

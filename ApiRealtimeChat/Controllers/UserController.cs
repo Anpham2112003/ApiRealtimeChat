@@ -22,9 +22,32 @@ namespace ApiRealtimeChat.Controllers
         {
             var result  = await _mediator.Send(new GetInforUserCommand(id));
 
-            if (result.IsFailuer) return NotFound(result.Error);
+            return result.IsFailuer ? NotFound(result.Error) : Ok(result.Data);
+        }
 
-            return Ok(result.Data);
+        [HttpPut("user/info/edit")]
+        public async Task<IActionResult> UpdateInforUser(UpdateInforUserCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsFailuer?BadRequest(result.Error):Ok(result.Data);
+
+        }
+
+        [HttpPatch("user/avatar/edit")]
+        public async Task<IActionResult> UpdateAvatar([FromForm]UpdateAvatarUserCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsFailuer ? BadRequest(result.Error) : Ok(result.Data);
+        }
+
+        [HttpDelete("user/avatar/delete/{id}")]
+        public async Task<IActionResult> RemoveAvatar(string id)
+        {
+            var result = await _mediator.Send(new RemoveAvatarUserCommand(id));
+
+            return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
         }
     }
 }

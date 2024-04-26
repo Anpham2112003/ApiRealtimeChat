@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.ResponeModel
+namespace Domain.ResponeModel
 {
     public class LoginResponseModel
     {

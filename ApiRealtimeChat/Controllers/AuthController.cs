@@ -90,5 +90,13 @@ namespace ApiRealtimeChat.Controllers
             return Ok(result.Data);
 
         }
+
+        [HttpPost("auth/resetpassword")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess?Ok():BadRequest(result.Error);
+        }
     }
 }

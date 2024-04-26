@@ -10,7 +10,8 @@ namespace Domain.Entites
     public class Friend 
     {
         public ObjectId Id { get; set; }
-     
+        public DateTime createdAt =DateTime.Now;
+
         public Friend(ObjectId id)
         {
             Id = id;

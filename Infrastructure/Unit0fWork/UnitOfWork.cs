@@ -35,6 +35,11 @@ namespace Infrastructure.Unit0fWork
         private IUserRepository? _userRepository;
 
 
+        public IFriendRepository friendRepository 
+
+            => _friendRepository ??= new FriendRepository(_mongoDB);
+
+        private IFriendRepository? _friendRepository;
 
 
         public async Task<IClientSessionHandle> TransactionAsync()

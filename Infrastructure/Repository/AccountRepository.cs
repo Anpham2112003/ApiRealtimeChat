@@ -41,5 +41,20 @@ namespace Infrastructure.Repository
       
             await base._collection.FindOneAndUpdateAsync(filter, update);
         }
+
+        public async Task<bool> CheckAccountExist(ObjectId id)
+        {
+            var filter= Builders<AccountCollection>
+                .Filter.Eq(x=>x.Id, id);
+
+            var fields = Builders<AccountCollection>
+                .Projection.Include(x => x.Id);
+            
+            var result = await _collection.Find(filter)
+                .Project<AccountCollection>(fields)
+                .FirstOrDefaultAsync();
+
+           return result is null ? false: true;
+        }
     }
 }

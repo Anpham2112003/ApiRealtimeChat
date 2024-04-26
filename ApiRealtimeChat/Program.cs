@@ -41,9 +41,6 @@ builder.Services.AddAuthentication(op =>
         op.ClientSecret = builder.Configuration["Google:Key"];
         op.CallbackPath = "/api/signin-google";
        
-
-
-
     })
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, op =>
     {
@@ -53,10 +50,10 @@ builder.Services.AddAuthentication(op =>
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:AccessKey"])),
 
         };
-
-        
-        
+               
     });
+
+
 
 builder.Services.AddMediatR(op =>
 {
