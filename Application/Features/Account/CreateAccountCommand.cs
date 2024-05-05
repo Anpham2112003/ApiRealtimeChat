@@ -58,7 +58,7 @@ namespace Application.Features.Account
                     FistName = request.FistName,
                     LastName = request.LastName,
                     FullName = request.FistName + request.LastName,
-                    
+                    State = Domain.Enums.UserState.Offline
                 };
                      
                 await _unitOfWork.accountRepository.InsertAsync(account);

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Enums
 {
-    public enum AccountSate
+    public enum UserState
     {
         Online,
         Offline,

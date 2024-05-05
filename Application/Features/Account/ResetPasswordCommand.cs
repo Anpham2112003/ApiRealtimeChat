@@ -22,13 +22,13 @@ namespace Application.Features.Account
     public class HandResetpasswordCommand : IRequestHandler<ResetPasswordCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMailService _mailService;
+        private readonly IMailerServices _mailerServices;
         private readonly IConfiguration _configuration;
 
-        public HandResetpasswordCommand(IUnitOfWork unitOfWork, IMailService mailService, IConfiguration configuration)
+        public HandResetpasswordCommand(IUnitOfWork unitOfWork, IMailerServices mailerServices, IConfiguration configuration)
         {
             _unitOfWork = unitOfWork;
-            _mailService = mailService;
+            _mailerServices = mailerServices;
             _configuration = configuration;
         }
 
@@ -47,23 +47,29 @@ namespace Application.Features.Account
                 };
 
 
-                var token = JwtLibrary.GenerateToken(_configuration["Jwt:RestPasswordKey"]!,claims, DateTime.UtcNow.AddMinutes(5));
+                var token = JwtLibrary.GenerateToken(_configuration["Jwt:ResetPasswordKey"]!,claims, DateTime.UtcNow.AddMinutes(5));
 
-                var urlRiderect = new UriBuilder();
+                var urlRiderect = new UriBuilder(_configuration["ResetPasswordUrl:BaseUrl"]!);
+                urlRiderect.Query = $"token={token}";
 
-                urlRiderect.Scheme = _configuration["ResetPasswordUrl:Schema"];
-                urlRiderect.Host = _configuration["ResetPasswordUrl:Host"];
-                urlRiderect.Path = _configuration["ResetPasswordUrl:Path"];
-                urlRiderect.Port = int.Parse(_configuration["ResetPasswordUrl:Port"]!);
+
 
 
                 var Mail = new MailContent
                 {
                     To = request.Email!,
+
                     Subject = "Reset Password",
-                    Content = ""
+
+                    Content = @$"<html>
+                                
+                                <a href=`{ urlRiderect}`>Day la link thay doi mat khau</a>
+                                </html>"
                 };
-                return Result<string>.Success(urlRiderect.ToString());
+
+                await _mailerServices.SendMailAsync(Mail);
+
+                return Result<string>.Success();
             }
             catch (Exception e)
             {

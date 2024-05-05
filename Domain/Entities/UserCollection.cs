@@ -19,6 +19,7 @@ namespace Domain.Entites
         public string? FullName {  get; set; }
         public bool Gender { get; set; } 
         public string? Avatar { get; set; }
+        public UserState State { get; set; }
         public DateTime UpdatedAt { get; set; }
 
        

@@ -46,6 +46,14 @@ namespace ApiRealtimeChat.Controllers
             return Unauthorized(result.Error);
         }
 
+        [HttpPost("auth/resetpassword")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok() : BadRequest(result.Error);
+        }
+
         [HttpGet("signin/google")]
         public async Task GoogleLogin()
         {
@@ -77,26 +85,33 @@ namespace ApiRealtimeChat.Controllers
             return Ok(result.Data);
         }
 
-      
-       
+    
+
+        [HttpGet("auth/resetpassword/callback")]
+        public async Task<IActionResult> ResetPasswordCallback([FromQuery]ResetPasswordCallbackCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess?Ok(result.Data) : BadRequest(result.Error); 
+        }
+
+        [HttpPut("auth/changepassword")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess?Ok():BadRequest(result.Error);
+        }
 
         [HttpDelete("auth/remove")]
-        public async Task<IActionResult> RemoveAccount(RemoveAccountCommand command) 
-        { 
-            var result =  await _mediator.Send(command);
+        public async Task<IActionResult> RemoveAccount(RemoveAccountCommand command)
+        {
+            var result = await _mediator.Send(command);
 
             if (!result.IsSuccess) return BadRequest(result.Error);
 
             return Ok(result.Data);
 
-        }
-
-        [HttpPost("auth/resetpassword")]
-        public async Task<IActionResult> ResetPassword(ResetPasswordCommand command)
-        {
-            var result = await _mediator.Send(command);
-
-            return result.IsSuccess?Ok():BadRequest(result.Error);
         }
     }
 }

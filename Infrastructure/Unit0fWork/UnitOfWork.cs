@@ -41,6 +41,11 @@ namespace Infrastructure.Unit0fWork
 
         private IFriendRepository? _friendRepository;
 
+        public IGroupRepository groupRepository
+
+            => _groupRepository ??= new GroupRepository(_mongoDB);  
+
+        private IGroupRepository? _groupRepository;
 
         public async Task<IClientSessionHandle> TransactionAsync()
         {

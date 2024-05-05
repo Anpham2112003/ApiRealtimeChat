@@ -1,4 +1,5 @@
 ﻿using Domain.Entites;
+using Domain.Enums;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
@@ -23,5 +24,6 @@ namespace Domain.ResponeModel.BsonConvert
         public string? FullName { get; set; }
         public string? Avatar {  get; set; }
         public bool Gender { get; set; }    
+        public UserState State { get; set; }
     }
 }

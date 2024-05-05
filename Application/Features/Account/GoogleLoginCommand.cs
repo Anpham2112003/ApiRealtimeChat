@@ -5,6 +5,9 @@ using Domain.ResponeModel;
 using Domain.Settings;
 using Infrastructure.Unit0fWork;
 using MediatR;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using System;
@@ -30,11 +33,13 @@ namespace Application.Features.Account
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOptionsMonitor<JwtSetting> _options;
+        private readonly IHttpContextAccessor _contextAccessor;
 
-        public HandGoogleLoginCommnand(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options)
+        public HandGoogleLoginCommnand(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options, IHttpContextAccessor contextAccessor)
         {
             _unitOfWork = unitOfWork;
             _options = options;
+            _contextAccessor = contextAccessor;
         }
 
         public async Task<Result<LoginResponseModel>> Handle(GoogleLoginCommand request, CancellationToken cancellationToken)
@@ -48,7 +53,6 @@ namespace Application.Features.Account
                     {
                         Id = request.Id,
                         Email = "Google:" + request.Email,
-                        AccountSate = Domain.Enums.AccountSate.Offline,
                         AccountType = Domain.Enums.AccountType.Google,
                         CreatedAt = DateTime.UtcNow,
                         IsDelete = false,
@@ -61,8 +65,8 @@ namespace Application.Features.Account
                         AccountId = request.Id,
                         FistName = request.FistName,
                         LastName = request.LastName,
-                        FullName = request.FistName + " " + request.LastName
-
+                        FullName = request.FistName + " " + request.LastName,
+                        State=Domain.Enums.UserState.Offline,
                     };
 
                     var addAccount = _unitOfWork.accountRepository.InsertAsync(account);
@@ -73,9 +77,9 @@ namespace Application.Features.Account
 
                     var claims = new[]
                     {
-                    new Claim(ClaimTypes.Email,account.Email),
-                    new Claim(ClaimTypes.UserData,account.Id.ToString())
-                };
+                        new Claim(ClaimTypes.Email,account.Email),
+                        new Claim(ClaimTypes.PrimarySid,account.Id.ToString())
+                    };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
                     var refeshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
@@ -88,11 +92,13 @@ namespace Application.Features.Account
                     var claims = new[]
                     {
                         new Claim(ClaimTypes.Email,check.Email!),
-                        new Claim(ClaimTypes.UserData,check.Id.ToString())
+                        new Claim(ClaimTypes.PrimarySid,check.Id.ToString())
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
                     var refeshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
+                    
+                   
 
                     return Result<LoginResponseModel>.Success(new LoginResponseModel(check.Id.ToString(), accessToken, refeshToken));
                 }

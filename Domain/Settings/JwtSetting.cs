@@ -14,6 +14,10 @@ namespace Domain.Settings
 
         public string? ReFreshKey {  get; set; }
 
-       
+        public const string Isssser = "https://localhost:7074/issuser";
+
+        public const string Audience = "https://localhost:7074/audience";
+
+
     }
 }

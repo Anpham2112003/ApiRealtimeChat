@@ -4,6 +4,8 @@ using Domain.ResponeModel;
 using Domain.Settings;
 using Infrastructure.Unit0fWork;
 using MediatR;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -31,11 +33,13 @@ namespace Application.Features.Account
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOptionsMonitor<JwtSetting> _options;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public HandLoginAccount(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options)
+        public HandLoginAccount(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
             _options = options;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<Result<LoginResponseModel>> Handle(LoginAccountCommand request, CancellationToken cancellationToken)
@@ -53,14 +57,16 @@ namespace Application.Features.Account
 
                 var claims = new[]
                 {
-                new Claim(ClaimTypes.Email, request.Email!),
-                new Claim(ClaimTypes.UserData,checkAccount.Id.ToString())
+                    new Claim(ClaimTypes.Email, request.Email!),
+                    new Claim(ClaimTypes.PrimarySid,checkAccount.Id.ToString())
                 };
 
 
                 var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
 
                 var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddDays(7));
+
+                
 
                 return Result<LoginResponseModel>.Success(new LoginResponseModel(checkAccount.Id.ToString(), accessToken, refreshToken));
             }

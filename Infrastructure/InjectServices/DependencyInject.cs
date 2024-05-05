@@ -14,6 +14,7 @@ using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 using Infrastructure.Services;
 using Amazon.S3;
+using Microsoft.AspNetCore.Http;
 
 
 namespace Infrastructure.Dependency
@@ -44,8 +45,9 @@ namespace Infrastructure.Dependency
 
             services.AddAWSService<IAmazonS3>();
 
-            services.AddTransient<IMailerServices, MailerServices>();
+            services.AddScoped<IMailerServices, MailerServices>();
 
+            services.AddHttpContextAccessor();
 
             return services;
         }

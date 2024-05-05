@@ -17,6 +17,6 @@ namespace Infrastructure.Repository.BaseRepository
         public  Task RemoveAsync(FilterDefinition<TCollection> filter);
         public Task<UpdateResult> UpdateAsync(FilterDefinition<TCollection> filter, UpdateDefinition<TCollection> update);
         public Task FindOneAndUpdateAsync(FilterDefinition<TCollection> filter, BsonDocument elements);
-
+        public Task<UpdateResult> UpdateAsync(FilterDefinition<TCollection> filter, UpdateDefinition<TCollection> update, UpdateOptions options);
     }
 }

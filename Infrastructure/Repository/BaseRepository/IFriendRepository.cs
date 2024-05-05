@@ -15,5 +15,8 @@ namespace Infrastructure.Repository.BaseRepository
         public Task AddFriendAsync(ObjectId AccountId, ObjectId FriendId);
         public  Task<UpdateResult> RemoveFriendAsync(ObjectId AccountId, ObjectId FriendId);
         public Task<GetFriendsByAccountConvert?> GetFriendAysnc(ObjectId AccountId,int skip, int limit);
+        public  Task<GetInfoWaitAccecptConvert?> GetInfoFromWatiList(ObjectId AccountId, int skip, int limit);
+        public Task AcceptFriend(ObjectId myId, ObjectId WaitListId);
+        public Task AddToWaitlistAsync(ObjectId AccountId, ObjectId WaitListId);
     }
 }

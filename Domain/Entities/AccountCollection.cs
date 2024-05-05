@@ -14,7 +14,6 @@ namespace Domain.Entites
         public string? Email { get; set; }
         public string? Password { get; set; }
         public AccountType AccountType { get; set; }
-        public AccountSate AccountSate { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsDelete { get; set; }
         public DateTime DeletedAt { get; set; }

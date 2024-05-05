@@ -12,11 +12,11 @@ namespace Infrastructure.Repository.BaseRepository
 {
     public abstract class AbstractRepository<ICollection> :BaseRepository<ICollection> where ICollection : BaseCollection
     {
-        private readonly IMongoDB _mongoDB;
-        protected  IMongoCollection<ICollection> _collection { get; set; }
+        
+        protected  IMongoCollection<ICollection>? _collection { get; set; }
         protected AbstractRepository(IMongoDB mongoDB)
         {
-            _mongoDB = mongoDB;
+            
             
         }
 
@@ -29,7 +29,7 @@ namespace Infrastructure.Repository.BaseRepository
 
         public  async Task InsertAsync(ICollection collection)
         {
-            await _collection.InsertOneAsync(collection);
+            await _collection!.InsertOneAsync(collection);
         }
 
         public  async Task RemoveAsync(FilterDefinition<ICollection> filter)
@@ -39,7 +39,7 @@ namespace Infrastructure.Repository.BaseRepository
 
         public async Task<UpdateResult> UpdateAsync(FilterDefinition<ICollection> filter, UpdateDefinition<ICollection> update)
         {
-            var result = await _collection.UpdateOneAsync(filter, update);
+            var result = await _collection!.UpdateOneAsync(filter, update);
             
             return result;
         }
@@ -49,6 +49,9 @@ namespace Infrastructure.Repository.BaseRepository
             await _collection.FindOneAndUpdateAsync(filter, elements);
         }
 
-        
+        public async Task<UpdateResult> UpdateAsync(FilterDefinition<ICollection> filter, UpdateDefinition<ICollection> update, UpdateOptions options)
+        {
+            return await _collection!.UpdateOneAsync(filter,update,options);
+        }
     }
 }

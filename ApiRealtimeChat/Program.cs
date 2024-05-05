@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using System.Text.Json.Serialization;
+using Domain.Settings;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,33 +27,75 @@ builder.Services.AddControllers()
     });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(op =>
+{
+    op.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo()
+    {
+        Version = "v1",
+        Title = "RealtimeChat",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Email = "anpham2112003@gmail.com",
+            Name = "An",
+        },
+    });
+
+    op.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter a valild token",
+        Name = "Authorization",
+        Scheme = "Bearer"
+    });
+    op.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
+});
 
 builder.Services.AddAuthentication(op =>
 {
-    op.DefaultScheme=CookieAuthenticationDefaults.AuthenticationScheme;
-    op.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-
+    op.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    op.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    op.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 
 })
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddGoogle(GoogleDefaults.AuthenticationScheme, op =>
-    {
-        op.ClientId = builder.Configuration["Google:Id"];
-        op.ClientSecret = builder.Configuration["Google:Key"];
-        op.CallbackPath = "/api/signin-google";
-       
-    })
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, op =>
     {
         op.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
         {
             ValidateLifetime = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:AccessKey"])),
-
+            ValidateAudience = true,
+            ValidateIssuer = true,
+            ValidAudience = JwtSetting.Audience,
+            ValidIssuer = JwtSetting.Isssser
         };
-               
-    });
+        
+    })
+    .AddGoogle(GoogleDefaults.AuthenticationScheme, op =>
+    {
+        
+        op.ClientId = builder.Configuration["Google:Id"];
+        op.ClientSecret = builder.Configuration["Google:Key"];
+        op.CallbackPath = "/api/signin-google";
+       
+    })
+    
+    .AddCookie();
+
 
 
 

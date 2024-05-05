@@ -14,7 +14,7 @@ namespace Application.Errors
             => new Error("FriendError.FriendIdNotFound", $"Friend with Id :{id} not exist!");
         public static Error DocumentNotFound
 
-            => new Error("FriendError.DocumentNorFound", $"Not found FriendId or AccountId !");
+            => new Error("FriendError.DocumentNorFound", $"  FriendId or AccountId was not Exists !");
 
       
     }

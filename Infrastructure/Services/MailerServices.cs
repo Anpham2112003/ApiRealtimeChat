@@ -13,39 +13,37 @@ namespace Infrastructure.Services
 {
     public class MailerServices : IMailerServices
     {
-        private readonly IOptionsMonitor<MailSetting> _setting;
+        private readonly IOptions<MailSetting> _setting;
 
-        public MailerServices(IOptionsMonitor<MailSetting> setting)
+        public MailerServices(IOptions<MailSetting> setting)
         {
             _setting = setting;
         }
 
         public async Task SendMailAsync( MailContent content)
         {
+            var builder = new BodyBuilder();
+            builder.HtmlBody = content.Content;
+
             var message = new MimeMessage();
 
-            message.Sender = new MailboxAddress(_setting.CurrentValue.DispayName, _setting.CurrentValue.Email);
-            message.From.Add(new MailboxAddress(_setting.CurrentValue.DispayName,_setting.CurrentValue.Email));
+            message.Sender = new MailboxAddress(_setting.Value.DispayName, _setting.Value.Email);
+            message.From.Add(new MailboxAddress(_setting.Value.DispayName,_setting.Value.Email));
             message.To.Add( MailboxAddress.Parse(content.To)) ;
             message.Subject = content.Subject;
-
-
-
-            var builder = new BodyBuilder();
-
-            builder.HtmlBody = content.Content;
+            message.Body=builder.ToMessageBody();
 
             using var smtp = new MailKit.Net.Smtp.SmtpClient();
             try
             {
 
-                await  smtp.ConnectAsync(_setting.CurrentValue.Host,int.Parse(_setting.CurrentValue.Port!),true);
+                await  smtp.ConnectAsync(_setting.Value.Host,int.Parse(_setting.Value.Port!),true);
 
-                await smtp.AuthenticateAsync(_setting.CurrentValue.Email, _setting.CurrentValue.Password);
+                await smtp.AuthenticateAsync(_setting.Value.Email, _setting.Value.Password);
 
                 await smtp.SendAsync(message);
 
-                await smtp.DisconnectAsync(true);
+                
             }
             catch (Exception e)
             {
