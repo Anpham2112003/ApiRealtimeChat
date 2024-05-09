@@ -16,6 +16,14 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
+        [HttpGet("group/member/{id}")]
+        public async Task<IActionResult> GetMemberInGroup(string id, [FromQuery] int skip, int take)
+        {
+            var result = await _mediator.Send(new GetMemberInGroupCommand(id, skip, take));
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
+        }
+
         [Authorize]
         [HttpPost("group/create")]
         public async Task<IActionResult> CreateGroup(CreateGroupCommand command)
@@ -23,6 +31,69 @@ namespace ApiRealtimeChat.Controllers
             var result = await _mediator.Send(command);
 
             return Ok(result.Data);
+        }
+
+        [Authorize]
+        [HttpPost("group/member/add")]
+        public async Task<IActionResult> AddMemberToGroup(AddMemberToGroup command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
+        }
+
+        [Authorize]
+        [HttpPut("group/rename")]
+        public async Task<IActionResult> RenameGroup(ReNameGroupCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
+        }
+
+        [Authorize]
+        [HttpPut("group/avatar")]
+        public async Task<IActionResult> UpdateAvatarGroup(UpdateAvatarGroupCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
+        }
+
+        [Authorize]
+        [HttpPut("group/member/role")]
+        public async Task<IActionResult> UpdateRoleMember(ChangeRolesInGroupCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess?Ok(result.Data) : BadRequest(result?.Error);
+        }
+
+        [Authorize]
+        [HttpDelete("group/avatar/delete")]
+        public async Task<IActionResult> RemoveAvatarGroup(RemoveAvatarGroupCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess?Ok(result.Data) : BadRequest(result.Error);
+        }
+
+        [Authorize]
+        [HttpDelete("group/member/delete")]
+        public async Task<IActionResult> RemoveMemberInGroup(RemoveMemberInGroupCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess?Ok(result.Data):BadRequest(result?.Error);
+        }
+
+        [Authorize]
+        [HttpDelete("group/delete/{id}")]
+        public async Task<IActionResult> RemoveGroup(string id)
+        {
+            var result = await _mediator.Send(new RemoveGroupCommand(id));
+
+            return result.IsSuccess?Ok(result.Data):BadRequest(result.Error);   
         }
 
         

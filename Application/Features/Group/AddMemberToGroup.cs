@@ -1,4 +1,6 @@
-﻿using Application.Ultils;
+﻿using Application.Errors;
+using Application.Ultils;
+using Domain.Entites;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using MongoDB.Bson;
@@ -29,7 +31,17 @@ namespace Application.Features.Group
         {
             try
             {
-                await _unitOfWork.groupRepository.AddMemberToGroup(ObjectId.Parse(request.GroupId),ObjectId.Parse(request.UserId));
+                var groupId=ObjectId.Parse(request.GroupId);
+
+                var memberId = ObjectId.Parse(request.UserId);
+
+                var checkMember = await _unitOfWork.groupRepository.CheckMemberInGroupAsync(groupId, memberId);
+
+                if (checkMember is not null) return Result<string>.Failuer(GroupError.MemberExist);
+
+                var member = new Member(memberId, "default", Domain.Enums.GroupRoles.Member);
+
+;               await _unitOfWork.groupRepository.AddMemberToGroup(groupId,memberId,member);
 
                 return Result<string>.Success(request.GroupId);
             }

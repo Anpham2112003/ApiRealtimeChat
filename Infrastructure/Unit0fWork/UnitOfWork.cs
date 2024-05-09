@@ -43,9 +43,16 @@ namespace Infrastructure.Unit0fWork
 
         public IGroupRepository groupRepository
 
-            => _groupRepository ??= new GroupRepository(_mongoDB);  
+            => _groupRepository ??= new GroupRepository(_mongoDB);
 
         private IGroupRepository? _groupRepository;
+
+        public IMessageRepository messageRepository
+
+            =>_messageRepository ??= new MessageRepository(_mongoDB);
+
+        private IMessageRepository? _messageRepository;
+        
 
         public async Task<IClientSessionHandle> TransactionAsync()
         {

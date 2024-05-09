@@ -185,7 +185,7 @@ namespace Infrastructure.Repository
 
             var update = Builders<FriendCollection>.Update.Push(x => x.WaitingList, WaitListId);
 
-            await _collection.UpdateOneAsync(filter, update,new UpdateOptions() { IsUpsert=true});
+            await _collection!.UpdateOneAsync(filter, update,new UpdateOptions() { IsUpsert=true});
         }
     }
 }

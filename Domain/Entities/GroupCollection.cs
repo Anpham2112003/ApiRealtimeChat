@@ -23,8 +23,18 @@ namespace Domain.Entites
             Id = ObjectId.GenerateNewId();
             UserId = Userid;
             Name = name;
-            Members = new List<Member>() { new Member(Userid,"Admin",GroupRoles.Admin)};
-            Messages = new List<MesssageCollection>();
+            Members = new List<Member>() { new Member(Userid,"Root",GroupRoles.Created)};
+            Messages = new List<MesssageCollection>() { new MesssageCollection
+            {
+                Id=ObjectId.GenerateNewId(),
+                Count=0,
+                Page=1,
+                Messages=new List<Message>()
+            } };
+        }
+
+        public GroupCollection()
+        {
         }
     }
 }
