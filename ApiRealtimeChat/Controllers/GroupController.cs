@@ -79,8 +79,8 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [Authorize]
-        [HttpDelete("group/member/delete")]
-        public async Task<IActionResult> RemoveMemberInGroup(RemoveMemberInGroupCommand command)
+        [HttpDelete("group/member/kick")]
+        public async Task<IActionResult> RemoveMemberInGroup(KickMemberInGroupCommand command)
         {
             var result = await _mediator.Send(command);
 
@@ -88,10 +88,10 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [Authorize]
-        [HttpDelete("group/delete/{id}")]
+        [HttpDelete("group/member/leave")]
         public async Task<IActionResult> RemoveGroup(string id)
         {
-            var result = await _mediator.Send(new RemoveGroupCommand(id));
+            var result = await _mediator.Send(new LeaveGroupCommand(id));
 
             return result.IsSuccess?Ok(result.Data):BadRequest(result.Error);   
         }

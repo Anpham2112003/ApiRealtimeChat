@@ -37,11 +37,13 @@ namespace Infrastructure.Repository
             await base.UpdateAsync(filter, update);
         }
 
-        public async Task CreateGroup(ObjectId UserId, string GroupName)
+        public async Task<ObjectId> CreateGroup(ObjectId UserId, string GroupName)
         {
             var Group = new GroupCollection(UserId,GroupName);
 
             await base.InsertAsync(Group);
+
+            return Group.Id;
         }
 
         public async Task<Member?> CheckMemberInGroupAsync(ObjectId GroupId, ObjectId UserId)

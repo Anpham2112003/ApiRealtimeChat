@@ -11,7 +11,7 @@ namespace Infrastructure.Repository.BaseRepository
 {
     public interface IGroupRepository:BaseRepository<GroupCollection>
     {
-        public Task CreateGroup(ObjectId UserId,string GroupName);
+        public Task<ObjectId> CreateGroup(ObjectId UserId,string GroupName);
         public Task AddMemberToGroup(ObjectId GroupId, ObjectId UserId, Member member);
         public Task<Member?> CheckMemberInGroupAsync(ObjectId GroupId, ObjectId UserId);
         public Task RenameGroup(ObjectId GroupId, string GroupName);

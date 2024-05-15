@@ -32,9 +32,11 @@ namespace Application.Features.Group
         {
             try
             {
-                var Id = _contextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.PrimarySid);
+                var userId = ObjectId.Parse(_contextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.PrimarySid));
 
-                await _unitOfWork.groupRepository.CreateGroup(ObjectId.Parse(Id), request.GroupName!);
+                var GroupId =  await _unitOfWork.groupRepository.CreateGroup(userId, request.GroupName!);
+
+                await _unitOfWork.groupRoomRepository.AddToGroupRoom(userId, GroupId);
 
                 return Result<string>.Success();
             }

@@ -15,6 +15,10 @@ using Microsoft.Extensions.Options;
 using System.Text.Json.Serialization;
 using Domain.Settings;
 using Microsoft.OpenApi.Models;
+using Infrastructure.Services.HubServices;
+using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,12 +80,29 @@ builder.Services.AddAuthentication(op =>
     {
         op.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
         {
-            ValidateLifetime = true,
+            ValidateLifetime = false,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:AccessKey"])),
             ValidateAudience = true,
             ValidateIssuer = true,
             ValidAudience = JwtSetting.Audience,
             ValidIssuer = JwtSetting.Isssser
+        };
+
+        op.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/Hub"))
+                {
+                    Debug.WriteLine(path);
+                    context.Token = accessToken;
+                    
+                }
+                return Task.CompletedTask;
+            }
         };
         
     })
@@ -97,7 +118,10 @@ builder.Services.AddAuthentication(op =>
     .AddCookie();
 
 
-
+builder.Services.AddSignalR(op =>
+{
+   
+});
 
 builder.Services.AddMediatR(op =>
 {
@@ -117,11 +141,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.MapHub<HubService>("/Hub");
 
 app.MapControllers();
 

@@ -14,13 +14,13 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Group
 {
-    public class RemoveMemberInGroupCommand:IRequest<Result<string>>
+    public class KickMemberInGroupCommand:IRequest<Result<string>>
     {
         public string? GroupId { get; set; }
         public string? MemberId { get; set; }
     }
 
-    public class HandRemoveMemberInGroup : IRequestHandler<RemoveMemberInGroupCommand, Result<string>>
+    public class HandRemoveMemberInGroup : IRequestHandler<KickMemberInGroupCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -30,7 +30,7 @@ namespace Application.Features.Group
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<string>> Handle(RemoveMemberInGroupCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(KickMemberInGroupCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -47,6 +47,8 @@ namespace Application.Features.Group
                     return Result<string>.Failuer(GroupError.NotPermission);
 
                 await _unitOfWork.groupRepository.RemoveMemberInGroup(groupid, memberId);
+
+                await _unitOfWork.groupRoomRepository.RemoveGroupRoom(memberId, groupid);
 
                 return Result<string>.Success("Success!");
             }

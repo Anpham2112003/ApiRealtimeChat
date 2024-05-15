@@ -18,7 +18,8 @@ namespace Infrastructure.Unit0fWork
         public IUserRepository userRepository { get; }
         public IFriendRepository friendRepository { get; }
         public IGroupRepository groupRepository { get; }
-        public IMessageRepository messageRepository { get; }
+        public IGroupMessageRepository messageRepository { get; }
+        public IGroupRoomRepository groupRoomRepository { get; }
      
     }
 }

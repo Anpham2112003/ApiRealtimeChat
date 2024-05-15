@@ -28,7 +28,7 @@ namespace Domain.Entites
             {
                 Id=ObjectId.GenerateNewId(),
                 Count=0,
-                Page=1,
+                Page=0,
                 Messages=new List<Message>()
             } };
         }

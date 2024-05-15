@@ -27,7 +27,14 @@ namespace Infrastructure.Repository
 
         public async Task InsertUserAsync(UserCollection user)
         {
-            await base._collection.InsertOneAsync(user);
+            await base._collection!.InsertOneAsync(user);
+        }
+
+        public async Task ChangeStateUserAsync(ObjectId AccountId)
+        {
+            var filter = Builders<UserCollection>.Filter.Eq(x=>x.Id, AccountId);
+            var update = Builders<UserCollection>.Update.Set(x => x.State, Domain.Enums.UserState.Online);
+            await _collection!.UpdateOneAsync(filter, update);
         }
     }
 }

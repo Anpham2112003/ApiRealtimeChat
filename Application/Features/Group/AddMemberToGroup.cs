@@ -27,10 +27,12 @@ namespace Application.Features.Group
             _unitOfWork = unitOfWork;
         }
 
+
         public async Task<Result<string>> Handle(AddMemberToGroup request, CancellationToken cancellationToken)
         {
             try
             {
+                
                 var groupId=ObjectId.Parse(request.GroupId);
 
                 var memberId = ObjectId.Parse(request.UserId);
@@ -42,6 +44,8 @@ namespace Application.Features.Group
                 var member = new Member(memberId, "default", Domain.Enums.GroupRoles.Member);
 
 ;               await _unitOfWork.groupRepository.AddMemberToGroup(groupId,memberId,member);
+
+                await _unitOfWork.groupRoomRepository.AddToGroupRoom(memberId,groupId);
 
                 return Result<string>.Success(request.GroupId);
             }
