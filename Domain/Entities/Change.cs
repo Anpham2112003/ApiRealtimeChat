@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Entites
+namespace Domain.Entities
 {
     public interface Change
     {
         DateTime CreatedAt { get; set; }
 
-        DateTime UpdatedAt{ get; set; }
+        DateTime UpdatedAt { get; set; }
 
     }
 }

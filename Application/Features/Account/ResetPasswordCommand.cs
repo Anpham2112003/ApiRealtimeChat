@@ -1,5 +1,5 @@
 ﻿using Application.Errors;
-using Application.Ultils;
+using Domain.Ultils;
 using Infrastructure.Services;
 using Infrastructure.Unit0fWork;
 using MailKit;
@@ -43,7 +43,7 @@ namespace Application.Features.Account
                 var claims = new Claim[]
                 {
                     new Claim(ClaimTypes.Email, request.Email!),
-                    new Claim(ClaimTypes.PrimarySid,checkEmail.Id.ToString())
+                    new Claim(ClaimTypes.PrimarySid,checkEmail.Id!.ToString())
                 };
 
 

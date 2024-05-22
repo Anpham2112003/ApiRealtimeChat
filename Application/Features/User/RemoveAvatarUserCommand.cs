@@ -1,7 +1,7 @@
 ﻿using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Entities;
 using Domain.ResponeModel;
+using Domain.Ultils;
 using Infrastructure.Services;
 using Infrastructure.Unit0fWork;
 using MediatR;
@@ -45,7 +45,7 @@ namespace Application.Features.User
         {
             try
             {
-                var user = await _unitOfWork.userRepository.FindUserByAccountId(ObjectId.Parse(request.AccountId));
+                var user = await _unitOfWork.userRepository.FindUserByAccountId(request.AccountId!);
 
                 if (user is null) return Result<UploadAvatarResponeModel>.Failuer(UserError.UserNotFound(request.AccountId!));
 
@@ -53,7 +53,7 @@ namespace Application.Features.User
 
                 await _awsServices.RemoveFileAsync(_configuration["Aws:Bucket"]!, user.Avatar);
 
-                var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId, ObjectId.Parse(request.AccountId!));
+                var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId, request.AccountId!);
 
                 var update = Builders<UserCollection>.Update.Set(x => x.Avatar, null);
                

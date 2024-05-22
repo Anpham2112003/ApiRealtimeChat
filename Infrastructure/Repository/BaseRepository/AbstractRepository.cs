@@ -1,4 +1,4 @@
-﻿using Domain.Entites;
+﻿using Domain.Entities;
 using Infrastructure.MongoDBContext;
 using MongoDB.Bson;
 using MongoDB.Driver;

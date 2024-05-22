@@ -1,10 +1,7 @@
 using MediatR;
-using Infrastructure.Dependency;
 using System.Reflection;
 using AutoMapper;
 using Application.Features.Account;
-using Domain.Entites;
-using Application.Ultils;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -19,6 +16,9 @@ using Infrastructure.Services.HubServices;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 using System.Diagnostics;
+using ApiRealtimeChat.Controllers;
+using Domain.Ultils;
+using Infrastructure.InjectServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,7 +95,7 @@ builder.Services.AddAuthentication(op =>
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
 
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/Hub"))
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/Chat"))
                 {
                     Debug.WriteLine(path);
                     context.Token = accessToken;
@@ -118,17 +118,13 @@ builder.Services.AddAuthentication(op =>
     .AddCookie();
 
 
-builder.Services.AddSignalR(op =>
-{
-   
-});
+builder.Services.AddSignalR();
 
 builder.Services.AddMediatR(op =>
 {
     op.RegisterServicesFromAssembly(typeof(CreateAccountCommand).Assembly);
 });
 
-builder.Services.AddAutoMapper(op => { op.AddMaps(typeof(MapData).Assembly); });
 
 builder.Services.addInfrastructure(builder.Configuration);
 
@@ -148,8 +144,10 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.MapHub<HubService>("/Hub");
+
 
 app.MapControllers();
+
+app.MapHub<HubService>("/Chat");
 
 app.Run();

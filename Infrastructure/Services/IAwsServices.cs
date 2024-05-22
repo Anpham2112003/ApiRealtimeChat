@@ -11,6 +11,7 @@ namespace Infrastructure.Services
 {
     public interface IAwsServices
     {
+       
         public Task UploadFileAsync(string bucket,string key, IFormFile file);
         public Task RemoveFileAsync(string bucket,string key);
     }

@@ -1,6 +1,6 @@
 ﻿using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Entities;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using MongoDB.Bson;
@@ -37,7 +37,7 @@ namespace Application.Features.User
         {
             try
             {
-                var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId, ObjectId.Parse(request.Id));
+                var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId, request.Id);
 
                 var update = Builders<UserCollection>.Update
 

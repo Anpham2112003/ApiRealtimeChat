@@ -4,19 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Domain.Entites;
 using MongoDB.Bson;
 using Infrastructure.Unit0fWork;
 using AutoMapper;
-using Application.Ultils;
 using Application.Errors;
 using MongoDB.Driver;
+using Domain.Entities;
+using Domain.Ultils;
 
 namespace Application.Features.Account
 {
     public class CreateAccountCommand:IRequest<Result<CreateAccountCommand>>
     {
-        public ObjectId Id = ObjectId.GenerateNewId();
+        public string Id = ObjectId.GenerateNewId().ToString();
         public string? FistName { get; set; }
         public string? LastName { get; set; }
         public string? Email { get; set; }
@@ -30,12 +30,12 @@ namespace Application.Features.Account
     public class HandCreateAccountCommand : IRequestHandler<CreateAccountCommand, Result<CreateAccountCommand>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
+       
 
-        public HandCreateAccountCommand(IUnitOfWork unitOfWork, IMapper mapper)
+        public HandCreateAccountCommand(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
+          
         }
 
         public async Task<Result<CreateAccountCommand>> Handle(CreateAccountCommand request, CancellationToken cancellationToken)
@@ -48,12 +48,19 @@ namespace Application.Features.Account
 
                 if (checkExist is not null) return Result<CreateAccountCommand>.Failuer(AccountError.AccountAllready(request.Email!));
 
-                var account = _mapper.Map<AccountCollection>(request);
+                var account = new AccountCollection
+                {
+                    Id = request.Id,
+                    AccountType = Domain.Enums.AccountType.None,
+                    CreatedAt = DateTime.UtcNow,
+                    Email = request.Email,
+                    Password = request.Password,
+                };
 
                 var user = new UserCollection()
                 {
-                    Id = ObjectId.GenerateNewId(),
-                    AccountId = account.Id,
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    AccountId = account.Id.ToString(),
                     Avatar = null,
                     FistName = request.FistName,
                     LastName = request.LastName,

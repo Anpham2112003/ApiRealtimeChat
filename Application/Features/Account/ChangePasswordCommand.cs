@@ -1,6 +1,6 @@
 ﻿using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Entities;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using MongoDB.Driver;

@@ -1,9 +1,8 @@
 ﻿
 using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
 using Domain.ResponeModel;
 using Domain.ResponeModel.BsonConvert;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using MongoDB.Bson;
@@ -43,7 +42,7 @@ namespace Application.Features.Friend
         {
             try
             {
-                var result = await _unitOfWork.friendRepository.GetFriendAysnc(ObjectId.Parse(request.AccoutId), request.skip, request.limit);
+                var result = await _unitOfWork.friendRepository.GetFriendAysnc(request.AccoutId!, request.skip, request.limit);
 
                 if (result == null) return Result<PagingRespone<List<FriendResultConvert>>>.Failuer(FriendError.DocumentNotFound);
 

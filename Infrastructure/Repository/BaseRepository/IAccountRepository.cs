@@ -1,4 +1,4 @@
-﻿using Domain.Entites;
+﻿using Domain.Entities;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
@@ -13,7 +13,7 @@ namespace Infrastructure.Repository.BaseRepository
     {
         public Task<AccountCollection?> FindAccountByEmail(string email);
         public Task SoftDeleteAccount(AccountCollection account);
-        public  Task<bool> CheckAccountExist(ObjectId id);
+        public  Task<bool> CheckAccountExist(string id);
 
 
     }

@@ -1,7 +1,7 @@
 ﻿using Application.Errors;
-using Application.Ultils;
 using Domain.ResponeModel;
 using Domain.Settings;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.Extensions.Configuration;

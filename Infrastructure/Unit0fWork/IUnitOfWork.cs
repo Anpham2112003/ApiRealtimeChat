@@ -1,4 +1,4 @@
-﻿using Domain.Entites;
+﻿
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository;
 using Infrastructure.Repository.BaseRepository;
@@ -18,8 +18,11 @@ namespace Infrastructure.Unit0fWork
         public IUserRepository userRepository { get; }
         public IFriendRepository friendRepository { get; }
         public IGroupRepository groupRepository { get; }
-        public IGroupMessageRepository messageRepository { get; }
-        public IGroupRoomRepository groupRoomRepository { get; }
+       
+        
+        public IConversationRepository conversationRepository { get; }
+        public IMessageRepository messageRepository { get; }
+       
      
     }
 }

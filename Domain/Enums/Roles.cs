@@ -8,8 +8,9 @@ namespace Domain.Enums
 {
     public enum GroupRoles
     {
+        Created,
         Admin,
         Member,
-        Created
+       
     }
 }

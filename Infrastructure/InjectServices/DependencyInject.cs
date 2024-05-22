@@ -17,7 +17,7 @@ using Amazon.S3;
 using Microsoft.AspNetCore.Http;
 
 
-namespace Infrastructure.Dependency
+namespace Infrastructure.InjectServices
 {
     public static class DependencyInject
     {

@@ -1,4 +1,4 @@
-﻿using Domain.Entites;
+﻿using Domain.Entities;
 using Domain.ResponeModel.BsonConvert;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
@@ -22,7 +22,7 @@ namespace Infrastructure.Repository
             _userCollection = mongoDB.GetCollection<UserCollection>(nameof(UserCollection));
         }
 
-        public async Task AddFriendAsync(ObjectId AccountId, ObjectId FriendId)
+        public async Task AddFriendAsync(string AccountId, string FriendId)
         {
             var fillter = Builders<FriendCollection>
                 .Filter.Eq(x => x.AccountId, AccountId);
@@ -31,23 +31,23 @@ namespace Infrastructure.Repository
                 .Update
                 .AddToSet(x => x.Friends, new Friend(FriendId));
 
-            await _collection.UpdateOneAsync(fillter, update, new UpdateOptions() { IsUpsert = true });
+            await _collection!.UpdateOneAsync(fillter, update, new UpdateOptions() { IsUpsert = true });
         }
 
-        public async Task AcceptFriend(ObjectId myId, ObjectId WaitListId)
+        public async Task AcceptFriend(string myId, string WaitListId)
         {
             var filter = Builders<FriendCollection>.Filter.Eq(x => x.AccountId, myId);
 
             var update = Builders<FriendCollection>
 
                 .Update
-                .Pull(x => x.WaitingList, WaitListId)
+                .Pull(x => x.WaitingList, ObjectId.Parse(WaitListId))
                 .AddToSet(x => x.Friends, new Friend(WaitListId));
 
-            await _collection.UpdateOneAsync(filter, update,new UpdateOptions { IsUpsert=true});
+            await _collection!.UpdateOneAsync(filter, update,new UpdateOptions { IsUpsert=true});
         }
 
-        public async Task<UpdateResult> RemoveFriendAsync(ObjectId AccountId, ObjectId FriendId)
+        public async Task<UpdateResult> RemoveFriendAsync(string AccountId, string FriendId)
         {
             var filter = Builders<FriendCollection>
                 .Filter.Eq(x => x.AccountId, AccountId);
@@ -56,12 +56,12 @@ namespace Infrastructure.Repository
                 .Update
                 .PullFilter(x => x.Friends, pull);
 
-            var result = await _collection.UpdateOneAsync(filter, update);
+            var result = await _collection!.UpdateOneAsync(filter, update);
 
             return result;
         }
 
-        public async Task<GetFriendsByAccountConvert?> GetFriendAysnc(ObjectId AccountId, int skip, int limit)
+        public async Task<GetFriendsByAccountConvert?> GetFriendAysnc(string AccountId, int skip, int limit)
         {
 
             var result = await _collection.Aggregate()
@@ -124,7 +124,7 @@ namespace Infrastructure.Repository
 
         }
 
-        public async Task<GetInfoWaitAccecptConvert?> GetInfoFromWatiList(ObjectId AccountId, int skip, int limit)
+        public async Task<GetInfoWaitAccecptConvert?> GetInfoFromWatiList(string AccountId, int skip, int limit)
         { 
             var result = await _collection.Aggregate()
             .Match(x => x.AccountId == AccountId)
@@ -179,11 +179,11 @@ namespace Infrastructure.Repository
             return result;
         }
 
-        public async Task AddToWaitlistAsync(ObjectId AccountId, ObjectId WaitListId)
+        public async Task AddToWaitlistAsync(string AccountId, string  WaitListId)
         {
             var filter = Builders<FriendCollection>.Filter.Eq(x=>x.AccountId,AccountId);
 
-            var update = Builders<FriendCollection>.Update.Push(x => x.WaitingList, WaitListId);
+            var update = Builders<FriendCollection>.Update.Push(x => x.WaitingList, ObjectId.Parse(WaitListId));
 
             await _collection!.UpdateOneAsync(filter, update,new UpdateOptions() { IsUpsert=true});
         }

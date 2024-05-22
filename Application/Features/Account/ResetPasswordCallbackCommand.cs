@@ -1,6 +1,6 @@
 ﻿using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Entities;
+using Domain.Ultils;
 using Infrastructure.Services;
 using Infrastructure.Unit0fWork;
 using MediatR;

@@ -1,6 +1,6 @@
-﻿using Application.Ultils;
-using Domain.ResponeModel;
+﻿using Domain.ResponeModel;
 using Domain.ResponeModel.BsonConvert;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -36,7 +36,7 @@ namespace Application.Features.Friend
         {
             var accountId = _contextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.PrimarySid);
 
-            var result  = await _unitOfWork.friendRepository.GetInfoFromWatiList(ObjectId.Parse(accountId),request.index,request.limit);
+            var result  = await _unitOfWork.friendRepository.GetInfoFromWatiList(accountId!,request.index,request.limit);
 
             var page = new PagingRespone<GetInfoWaitAccecptConvert>(request.index, request.limit, result);
 

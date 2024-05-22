@@ -1,5 +1,5 @@
 ﻿using Application.Errors;
-using Application.Ultils;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using System;

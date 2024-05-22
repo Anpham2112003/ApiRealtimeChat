@@ -1,4 +1,4 @@
-﻿using Domain.Entites;
+﻿using Domain.Entities;
 using Domain.ResponeModel.BsonConvert;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -12,11 +12,11 @@ namespace Infrastructure.Repository.BaseRepository
 {
     public interface IFriendRepository :BaseRepository<FriendCollection>
     {
-        public Task AddFriendAsync(ObjectId AccountId, ObjectId FriendId);
-        public  Task<UpdateResult> RemoveFriendAsync(ObjectId AccountId, ObjectId FriendId);
-        public Task<GetFriendsByAccountConvert?> GetFriendAysnc(ObjectId AccountId,int skip, int limit);
-        public  Task<GetInfoWaitAccecptConvert?> GetInfoFromWatiList(ObjectId AccountId, int skip, int limit);
-        public Task AcceptFriend(ObjectId myId, ObjectId WaitListId);
-        public Task AddToWaitlistAsync(ObjectId AccountId, ObjectId WaitListId);
+        public Task AddFriendAsync(string AccountId, string FriendId);
+        public  Task<UpdateResult> RemoveFriendAsync(string AccountId, string FriendId);
+        public Task<GetFriendsByAccountConvert?> GetFriendAysnc(string AccountId,int skip, int limit);
+        public  Task<GetInfoWaitAccecptConvert?> GetInfoFromWatiList(string AccountId, int skip, int limit);
+        public Task AcceptFriend(string myId, string WaitListId);
+        public Task AddToWaitlistAsync(string AccountId, string WaitListId);
     }
 }

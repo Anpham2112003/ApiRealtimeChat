@@ -1,8 +1,8 @@
-﻿using Application.Ultils;
+﻿using Domain.Errors;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
-using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,44 +15,34 @@ namespace Application.Features.Group
     public class LeaveGroupCommand:IRequest<Result<string>>
     {
         public string? Id {  get; set; }
-
-        public LeaveGroupCommand(string? id)
-        {
-            Id = id;
-        }
     }
-
-    public class HandLeaveGroupCommand : IRequestHandler<LeaveGroupCommand, Result<string>>
+    public class HandLeavGroupCommand : IRequestHandler<LeaveGroupCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IHttpContextAccessor _contextAccessor;
-
-        public HandLeaveGroupCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor)
+        private readonly IHttpContextAccessor _accessor;
+        public HandLeavGroupCommand(IUnitOfWork unitOfWork, IHttpContextAccessor accessor)
         {
             _unitOfWork = unitOfWork;
-            _contextAccessor = contextAccessor;
+            _accessor = accessor;
         }
 
         public async Task<Result<string>> Handle(LeaveGroupCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var userId = ObjectId.Parse(_contextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.PrimarySid));
+                var UserId = _accessor.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
 
-                var groupId = ObjectId.Parse(request.Id);
+                var result = await _unitOfWork.groupRepository.LeaveGroup(request.Id!, UserId);
 
-                await _unitOfWork.groupRepository.RemoveMemberInGroup(groupId, userId);
+                if (result.MatchedCount == 0) return Result<string>.Failuer(GroupError.GroupNotFound);
 
-                await _unitOfWork.groupRoomRepository.RemoveGroupRoom( userId,groupId);
-
-                return Result<string>.Success(request.Id);
+                return Result<string>.Success(UserId);
             }
             catch (Exception)
             {
 
                 throw;
             }
-           
         }
     }
 }

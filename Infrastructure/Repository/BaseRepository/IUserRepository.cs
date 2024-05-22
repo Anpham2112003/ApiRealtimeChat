@@ -1,4 +1,5 @@
-﻿using Domain.Entites;
+﻿using Domain.Entities;
+using Domain.Enums;
 using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace Infrastructure.Repository.BaseRepository
     public interface IUserRepository:BaseRepository<UserCollection>
     {
         Task InsertUserAsync(UserCollection user);
-        public  Task ChangeStateUserAsync(ObjectId AccountId);
-        Task<UserCollection?> FindUserByAccountId(ObjectId id);
+        public  Task ChangeStateUserAsync(string AccountId, UserState state);
+        Task<UserCollection?> FindUserByAccountId(string id);
     }
 }

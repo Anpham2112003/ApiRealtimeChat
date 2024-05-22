@@ -9,16 +9,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Entites
+namespace Domain.Entities
 {
     public class FriendCollection : BaseCollection
     {
-        public ObjectId Id { get; set; }
-        public ObjectId AccountId {  get; set; }
+        
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; }
+
+       
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? AccountId { get; set; }
         public List<ObjectId> WaitingList { get; set; }
         public List<Friend>? Friends { get; set; }
 
-        public FriendCollection(ObjectId id, ObjectId accountId)
+        public FriendCollection(string id, string accountId)
         {
             Id = id;
             AccountId = accountId;
@@ -27,15 +32,15 @@ namespace Domain.Entites
         }
     }
 
-   
-    public class FriendResult 
+
+    public class FriendResult
     {
 
 
 
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id {  get; set; }
+        public string? Id { get; set; }
 
         [BsonRepresentation(BsonType.ObjectId)]
         public string? AccountId { get; set; }

@@ -1,140 +1,132 @@
-﻿using Domain.Entites;
-using Domain.Enums;
-using Domain.ResponeModel.BsonConvert;
+﻿using Domain.Entities;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Repository
 {
-    public class GroupRepository : AbstractRepository<GroupCollection>, IGroupRepository
+    public class GroupRepository : AbstractRepository<ConversationCollection>, IGroupRepository
     {
-        
         public GroupRepository(IMongoDB mongoDB) : base(mongoDB)
         {
-            base._collection=mongoDB.GetCollection<GroupCollection>(nameof(GroupCollection));
+            _collection = mongoDB.GetCollection<ConversationCollection>(nameof(ConversationCollection));
         }
 
-        public async Task AddMemberToGroup(ObjectId GroupId, ObjectId UserId, Member member)
+        public async Task<UpdateResult> UpdateAvatarGroupAsync(string Id,string AvatarUrl)
         {
-            var Member = new Member(UserId, "default", Domain.Enums.GroupRoles.Member);
+            var filter =Builders<ConversationCollection>.Filter.Where(x=>x.Id== Id&&x.IsGroup==true);
 
-            var filter = Builders<GroupCollection>
-                .Filter.Eq(x => x.Id , GroupId);
+            var update = Builders<ConversationCollection>.Update
+                .Set(x=>x.UpdatedAt,DateTime.UtcNow)
+                .Set(x=>x.Group!.Avatar, AvatarUrl);
 
-            var update = Builders<GroupCollection>
-                .Update.AddToSet(x=>x.Members,member);
-
-            await base.UpdateAsync(filter, update);
+           return await _collection!.UpdateOneAsync(filter, update);
         }
 
-        public async Task<ObjectId> CreateGroup(ObjectId UserId, string GroupName)
+        public async Task<UpdateResult> AddManyMemberToGroup(string MyId,string GroupId, IEnumerable<string> Ids)
         {
-            var Group = new GroupCollection(UserId,GroupName);
+            var members = new HashSet<Member>();
 
-            await base.InsertAsync(Group);
+            foreach (var item in Ids!)
+            {
+                var member = new Member(item, Domain.Enums.GroupRoles.Member);
 
-            return Group.Id;
+                members.Add(member);
+            }
+
+            var filter = Builders<ConversationCollection>
+                .Filter.And(
+                    Builders<ConversationCollection>.Filter.Eq(x => x.Id, GroupId),
+                    Builders<ConversationCollection>.Filter.Eq("Onwers", MyId),
+                    Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, true)
+                );
+
+            var update = Builders<ConversationCollection>
+                .Update
+                .AddToSetEach(x=>x.Owners,Ids)
+                .PushEach(x => x.Group!.Members, members);
+
+           return await _collection!.UpdateOneAsync(filter, update);
         }
 
-        public async Task<Member?> CheckMemberInGroupAsync(ObjectId GroupId, ObjectId UserId)
+        public async Task CreateGroupAsync(ConversationCollection conversation)
         {
-            var filter = Builders<GroupCollection>.Filter.Where(x => x.Id == GroupId && x.Members!.Any(x => x.Id == UserId));
+            await _collection!.InsertOneAsync(conversation);
+        }
 
-            var project = Builders<GroupCollection>.Projection.Include(x => x.Members);
+        public async Task<UpdateResult> RenameGroupAsync(string Id, string Name)
+        {
+            var filter = Builders<ConversationCollection>
+                .Filter.Where(x=>x.Id==Id&&x.IsGroup == true);
 
-            var result = await _collection.Find(filter).Project(project).As<GroupCollection>().FirstOrDefaultAsync();
-            
-            return result.Members?.FirstOrDefault() ;
+            var update = Builders<ConversationCollection>
+                .Update
+                .Set(x=>x.UpdatedAt,DateTime.UtcNow)
+                .Set(x=>x.Group!.Name,Name);
+
+            return   await _collection!.UpdateOneAsync(filter,update);
 
         }
 
-        public async Task RenameGroup(ObjectId GroupId, string GroupName)
+        public async Task<Member?> GetMemberInGroup(string Id, string MemberId)
         {
-            var filter = Builders<GroupCollection>.Filter.Eq(x => x.Id, GroupId);
+            var buider = Builders<ConversationCollection>.Filter.Where(x=>x.Id==Id&&x.IsGroup==true);
+            var project = Builders<ConversationCollection>.Projection.Expression(x => x.Group!.Members!.FirstOrDefault(x=>x.Id==MemberId));
 
-            var update = Builders<GroupCollection>.Update.Set(x => x.Name, GroupName);
-
-            await _collection!.UpdateOneAsync(filter, update);
-        }
-
-        public async Task UpdateAvatarGroupAsync(ObjectId GroupId, string AvatarUrl)
-        {
-            var filter = Builders<GroupCollection>.Filter.Eq(x => x.Id, GroupId);
-
-            var update = Builders<GroupCollection>.Update.Set(x => x.Avatar, AvatarUrl);
-
-            await _collection!.UpdateOneAsync(filter,update);
-        }
-
-        public async Task<GroupCollection?> GetAvatarGroupAsync(ObjectId Groupid)
-        {
-            var filter = Builders<GroupCollection>.Filter.Eq(x=>x.Id, Groupid);
-            var project = Builders<GroupCollection>.Projection
-                .Include(x => x.Avatar);
-
-            var result =  await _collection.Find(filter).Project<GroupCollection>(project).FirstOrDefaultAsync();
+            var result = await _collection.Find(buider).Project(project)!.FirstOrDefaultAsync();
 
             return result;
         }
 
-        public async Task UpdateRoleInGroup(ObjectId GroupId, ObjectId Id, GroupRoles roles)
+        public async Task KickMemberInGroup(string Id, string MemberId)
         {
-            var filter = Builders<GroupCollection>.Filter.Where(x=>x.Id == GroupId&& x.Members!.Any(x=>x.Id==Id));
+            var filter = Builders<ConversationCollection>
+                .Filter.Where(x=>x.Id == Id&&x.IsGroup==true);
 
-            var update = Builders<GroupCollection>.Update.Set(x => x.Members.FirstMatchingElement().Role, roles);
+            var update = Builders<ConversationCollection>
+                .Update
+                .Pull(x=>x.Owners,MemberId)
+                .PullFilter(x => x.Group!.Members, Builders<Member>.Filter.Eq(x => x.Id, MemberId));
 
             await _collection!.UpdateOneAsync(filter, update);
         }
 
-        public async Task RemoveMemberInGroup(ObjectId GroupId, ObjectId MemberId)
+        public async Task<List<string>> DeleteGroupAsync(string Id)
         {
-            var filter = Builders<GroupCollection>.Filter.Where(x=>x.Id==GroupId&& x.Members!.Any(x=> x.Id==MemberId));
+            var filter = Builders<ConversationCollection>.Filter.Eq(x=>x.Id, Id);
+            var project = Builders<ConversationCollection>.Projection.Expression(x => x.Group!.Members!.Select(x=>x.Id).ToList());
 
-            var update = Builders<GroupCollection>.Update.PopFirst(x => x.Members);
+            var result =await _collection!.FindOneAndDeleteAsync(filter,new FindOneAndDeleteOptions<ConversationCollection, List<string>>
+            {
+                Projection=project!
+            });
 
-            await _collection!.UpdateOneAsync(filter, update);
+            return result;
+           
         }
 
-        public async Task<List<Member>> GetMembersInGroupAsync(ObjectId GroupId, int skip, int limmit)
+        public async Task<UpdateResult> LeaveGroup(string Id, string UserId)
         {
-            var filter = Builders<GroupCollection>
-                .Filter.Eq(x=>x.Id,GroupId);
+            var filter = Builders<ConversationCollection>.Filter
+                .And(
+                    Builders<ConversationCollection>.Filter.Eq(x => x.Id, Id),
+                    Builders<ConversationCollection>.Filter.ElemMatch(x => x.Messages, UserId)
+                );
 
-            var project = Builders<GroupCollection>
+            var update = Builders<ConversationCollection>.Update
+                .Pull(x=>x.Owners,UserId)
+                .PullFilter(x=>x.Group!.Members,Builders<Member>.Filter.Eq(x=>x.Id, UserId));
 
-                .Projection
-                .Exclude(x=>x.Id)
-                .Exclude(x=>x.Messages)
-                .Exclude(x=>x.Name)
-                .Exclude(x=>x.Avatar)
-                .Slice(x => x.Members, skip, limmit);
-       
-                
-                
-            var result =await _collection.Find(filter)
-                .Project<GroupCollection>(project)
-                .FirstOrDefaultAsync();
-
-            if( result is null) return new List<Member>();
-
-            return result.Members!;
-        }
-
-        public async Task RemoveGroup(ObjectId GroupId)
-        {
-            var filter = Builders<GroupCollection>.Filter.Eq(x=>x.Id,GroupId);
-
-            await _collection.FindOneAndDeleteAsync(filter);
+            return await _collection!.UpdateOneAsync(filter,update);
         }
     }
 }

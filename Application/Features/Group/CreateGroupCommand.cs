@@ -1,4 +1,5 @@
-﻿using Application.Ultils;
+﻿using Domain.Entities;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -12,39 +13,58 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Group
 {
-    public class CreateGroupCommand:IRequest<Result<string>>
+    public class CreateGroupCommand:IRequest<Result<ConversationCollection>>
     {
-        public string? GroupName { get; set;}
+        public string? Name { get; set; }
+       
     }
 
-    public class HandCreateGroupCommand : IRequestHandler<CreateGroupCommand, Result<string>>
+    public class HandCreateGroupCommand : IRequestHandler<CreateGroupCommand, Result<ConversationCollection>>
     {
-        private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IHttpContextAccessor _context;
         private readonly IUnitOfWork _unitOfWork;
 
-        public HandCreateGroupCommand(IHttpContextAccessor contextAccessor, IUnitOfWork unitOfWork)
+        public HandCreateGroupCommand(IHttpContextAccessor context, IUnitOfWork unitOfWork)
         {
-            _contextAccessor = contextAccessor;
+            _context = context;
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Result<string>> Handle(CreateGroupCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ConversationCollection>> Handle(CreateGroupCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var userId = ObjectId.Parse(_contextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.PrimarySid));
+                var UserId = _context.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
 
-                var GroupId =  await _unitOfWork.groupRepository.CreateGroup(userId, request.GroupName!);
+                var group = new ConversationCollection
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    Owners = new List<string> { UserId },
+                    IsGroup = true,
+                    Messages = new List<Domain.Entities.Message>(),
+                    Group = new Domain.Entities.Group
+                    {
+                        Name = request.Name,
+                        MessagePinds = new List<MessagePind> { },
+                        TotalMember = 1,
+                        Avatar = "",
+                        Members = new List<Member>
+                        {
+                            new Member(UserId,Domain.Enums.GroupRoles.Created)
+                        }
+                    }
+                };
 
-                await _unitOfWork.groupRoomRepository.AddToGroupRoom(userId, GroupId);
+                await _unitOfWork.groupRepository.CreateGroupAsync(group);
 
-                return Result<string>.Success();
+                return Result<ConversationCollection>.Success(group);
             }
             catch (Exception)
             {
 
                 throw;
             }
+            
         }
     }
 }

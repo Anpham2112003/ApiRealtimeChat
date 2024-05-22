@@ -1,6 +1,6 @@
 ﻿using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Entities;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using MongoDB.Bson;
@@ -38,7 +38,7 @@ namespace Application.Features.User
         {
             try
             {
-                var user = await _unitOfWork.userRepository.FindUserByAccountId(ObjectId.Parse(request.Id));
+                var user = await _unitOfWork.userRepository.FindUserByAccountId(request.Id!);
 
                 if (user is null) return Result<UserCollection>.Failuer(UserError.UserNotFound(request.Id!));
 

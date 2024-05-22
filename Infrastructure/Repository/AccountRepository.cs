@@ -1,4 +1,4 @@
-﻿using Domain.Entites;
+﻿using Domain.Entities;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
@@ -42,7 +42,7 @@ namespace Infrastructure.Repository
             await base._collection.FindOneAndUpdateAsync(filter, update);
         }
 
-        public async Task<bool> CheckAccountExist(ObjectId id)
+        public async Task<bool> CheckAccountExist(string id)
         {
             var filter= Builders<AccountCollection>
                 .Filter.Eq(x=>x.Id, id);

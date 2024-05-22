@@ -1,21 +1,24 @@
 ﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Entites
+namespace Domain.Entities
 {
-    public class Friend 
+    public class Friend
     {
-        public ObjectId Id { get; set; }
-        public DateTime createdAt =DateTime.Now;
+       
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; }
+        public DateTime createdAt = DateTime.Now;
 
-        public Friend(ObjectId id)
+        public Friend(string id)
         {
             Id = id;
-           
+
         }
     }
 }

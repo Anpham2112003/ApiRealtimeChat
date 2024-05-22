@@ -1,7 +1,7 @@
 ﻿using Application.Errors;
-using Application.Ultils;
 using Domain.ResponeModel;
 using Domain.Settings;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -58,7 +58,7 @@ namespace Application.Features.Account
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.Email, request.Email!),
-                    new Claim(ClaimTypes.PrimarySid,checkAccount.Id.ToString())
+                    new Claim(ClaimTypes.PrimarySid,checkAccount.Id!.ToString())
                 };
 
 

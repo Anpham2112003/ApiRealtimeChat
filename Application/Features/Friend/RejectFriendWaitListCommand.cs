@@ -1,6 +1,6 @@
 ﻿using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Entities;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -44,7 +44,7 @@ namespace Application.Features.Friend
 
                 var filter = Builders<FriendCollection>
                     .Filter
-                    .Eq(x => x.AccountId, ObjectId.Parse(accountId));
+                    .Eq(x => x.AccountId, accountId);
 
                 var update = Builders<FriendCollection>
                     .Update

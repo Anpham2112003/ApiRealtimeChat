@@ -1,5 +1,5 @@
 ﻿using Application.Errors;
-using Application.Ultils;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -42,15 +42,15 @@ namespace Application.Features.Friend
             {
                 var accountId = _contextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.PrimarySid);
 
-                var friend = await _unitOfWork.accountRepository.CheckAccountExist(ObjectId.Parse(request.FriendId));
+                var friend = await _unitOfWork.accountRepository.CheckAccountExist(request.FriendId!);
 
                 if ( !friend) return Result<ObjectId>.Failuer(FriendError.DocumentNotFound);
 
                 await  _unitOfWork.friendRepository
-                    .RemoveFriendAsync(ObjectId.Parse(accountId),ObjectId.Parse(request.FriendId));
+                    .RemoveFriendAsync(accountId!,request.FriendId!);
 
                 await _unitOfWork.friendRepository
-                    .RemoveFriendAsync(ObjectId.Parse(request.FriendId),ObjectId.Parse(accountId));
+                    .RemoveFriendAsync(request.FriendId!,accountId!);
 
 
                 return Result<ObjectId>.Success(ObjectId.Parse(request.FriendId));

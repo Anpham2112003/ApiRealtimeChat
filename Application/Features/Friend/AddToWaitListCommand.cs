@@ -1,6 +1,5 @@
 ﻿using Application.Errors;
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -40,15 +39,14 @@ namespace Application.Features.Friend
                
                 var accountId = _contextAccessor.HttpContext!.Request.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid);
 
-                var friendId = ObjectId.Parse(request.FriendAccountId);
 
-                var checkFriendAccount = await _unitOfWork.accountRepository.CheckAccountExist(ObjectId.Parse(request.FriendAccountId));
+                var checkFriendAccount = await _unitOfWork.accountRepository.CheckAccountExist(request.FriendAccountId!);
 
                 if ( !checkFriendAccount)
 
                 return Result<string>.Failuer(FriendError.DocumentNotFound);
 
-                await _unitOfWork.friendRepository.AddToWaitlistAsync(ObjectId.Parse(accountId),friendId);
+                await _unitOfWork.friendRepository.AddToWaitlistAsync(accountId, request.FriendAccountId!) ;
 
                 return Result<string>.Success("Success!");
             }

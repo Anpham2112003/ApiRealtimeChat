@@ -5,10 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Entites
+namespace Domain.Entities
 {
     public interface BaseCollection
     {
-        ObjectId Id { get; set; }
+        string? Id { get; set; }
     }
 }

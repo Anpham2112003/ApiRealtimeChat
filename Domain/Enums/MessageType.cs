@@ -10,6 +10,9 @@ namespace Domain.Enums
     {
         Message,
         Image,
-        Videocall
+        File,
+        Git,
+        Videocall,
+
     }
 }

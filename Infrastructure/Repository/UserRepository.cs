@@ -1,10 +1,12 @@
-﻿using Domain.Entites;
+﻿using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +20,7 @@ namespace Infrastructure.Repository
             base._collection=mongoDB.GetCollection<UserCollection>(nameof(UserCollection));
         }
 
-        public async Task<UserCollection?> FindUserByAccountId(ObjectId id)
+        public async Task<UserCollection?> FindUserByAccountId(string id)
         {
             var result = await _collection.FindAsync(x => x.AccountId== id);
 
@@ -30,11 +32,12 @@ namespace Infrastructure.Repository
             await base._collection!.InsertOneAsync(user);
         }
 
-        public async Task ChangeStateUserAsync(ObjectId AccountId)
+        public async Task ChangeStateUserAsync(string AccountId, UserState state)
         {
-            var filter = Builders<UserCollection>.Filter.Eq(x=>x.Id, AccountId);
-            var update = Builders<UserCollection>.Update.Set(x => x.State, Domain.Enums.UserState.Online);
-            await _collection!.UpdateOneAsync(filter, update);
+            var filter = Builders<UserCollection>.Filter.Eq(x=>x.AccountId, AccountId);
+            var update = Builders<UserCollection>.Update.Set(x=>x.State, state);
+          var result =   await _collection!.UpdateOneAsync(filter, update);
+            Debug.WriteLine(result);
         }
     }
 }

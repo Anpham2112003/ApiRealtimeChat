@@ -1,8 +1,8 @@
 ﻿
-using Application.Ultils;
-using Domain.Entites;
+using Domain.Entities;
 using Domain.ResponeModel;
 using Domain.Settings;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -51,7 +51,7 @@ namespace Application.Features.Account
                 {
                     var account = new AccountCollection()
                     {
-                        Id = request.Id,
+                        Id = request.Id.ToString(),
                         Email = "Google:" + request.Email,
                         AccountType = Domain.Enums.AccountType.Google,
                         CreatedAt = DateTime.UtcNow,
@@ -61,8 +61,8 @@ namespace Application.Features.Account
                     var user = new UserCollection()
                     {
 
-                        Id = ObjectId.GenerateNewId(),
-                        AccountId = request.Id,
+                        Id = ObjectId.GenerateNewId().ToString(),
+                        AccountId = request.Id.ToString(),
                         FistName = request.FistName,
                         LastName = request.LastName,
                         FullName = request.FistName + " " + request.LastName,
@@ -92,7 +92,7 @@ namespace Application.Features.Account
                     var claims = new[]
                     {
                         new Claim(ClaimTypes.Email,check.Email!),
-                        new Claim(ClaimTypes.PrimarySid,check.Id.ToString())
+                        new Claim(ClaimTypes.PrimarySid,check.Id!.ToString())
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
