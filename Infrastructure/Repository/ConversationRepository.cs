@@ -20,57 +20,432 @@ namespace Infrastructure.Repository
         public ConversationRepository(IMongoDB mongoDB) : base(mongoDB)
         {
             _collection = mongoDB.GetCollection<ConversationCollection>(nameof(ConversationCollection));
+
+            var ownerIndex = Builders<ConversationCollection>.IndexKeys.Ascending(x => x.Owners);
+            var seenIndex= Builders<ConversationCollection>.IndexKeys.Descending(x => x.Seen);
+
+            var indexs = new List<CreateIndexModel<ConversationCollection>>()
+            {
+                new CreateIndexModel<ConversationCollection>(ownerIndex,new CreateIndexOptions{Unique=true}),
+                new CreateIndexModel<ConversationCollection>(seenIndex),
+            };
+
+            _collection.Indexes.CreateMany(indexs);
         }
 
-        public async Task<List<ConversationCollection>> GetAllConversationAsync(string UserId, int skip,int limit)
+        public async Task<List<ConversationConvert>> GetAllConversationAsync(string UserId, int skip,int limit)
         {
-            var filter = Builders<ConversationCollection>.Filter.Eq("Owners", UserId);
+            var filter = Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(UserId));
 
-            var projection = Builders<ConversationCollection>.Projection
-                .Include(x => x.Id)
-                .Include(x => x.Owners)
-                .Include(x => x.IsGroup)
-                .Slice(x => x.Messages, -10)
-                .Slice(x => x.Group!.Members, -10)
-                .Include(x => x.CreatedAt)
-                .Include(x => x.UpdatedAt);
+            var aggry = await _collection.Aggregate()
+                .Match(filter)
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+               
+                    {
+                        "$addFields",new BsonDocument
+                        {
+                            {
+                                "sliceMessage",new BsonDocument
+                                {
+                                    {
+                                        "$slice", new BsonArray
+                                        {
+                                            "$Messages",-10
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "sliceOwner", new BsonDocument
+                                {
+                                    {
+                                        "$slice",new BsonArray
+                                        {
+                                            "$Owners",-2
+                                        }
+                                    }
+                                }
 
-            var result= await _collection.Find(filter)
-                .Project<ConversationCollection>(projection)
-                .Skip(skip).Limit(limit).ToListAsync();
+                            },
+                            {
+                                "slicePindMessage", new BsonDocument
+                                {
+                                    {
+                                        "$slice", new BsonArray
+                                        {
+                                            "$MessagePinds",-5
+                                        }
+                                    }
+                                }
+                            }
 
-            return result;
+                         }
+                    },
+                   
+
+                })
+                
+
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","sliceOwner"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline", new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FistName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "Sate",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","OwnerResult"
+                            }
+                        }
+                    }
+                })
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                     {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","sliceMessage.AccountId"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline", new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "FistName",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Users"
+                            }
+                        }
+                    }
+                })
+
+
+                .Project(new BsonDocument
+                {
+                    {
+                        "Owners","$OwnerResult"
+                    },
+                    {
+                        "MessagePinds","$slicePindMessage"
+                    },
+
+                    {
+                        "Messages", new BsonDocument
+                        {
+                            {
+                                "$map", new BsonDocument
+                                {
+                                    {
+                                        "input","$sliceMessage"
+                                    },
+                                    {
+                                        "as","item"
+                                    },
+                                    {
+                                        "in", new BsonDocument
+                                        {
+                                            {
+                                                "$mergeObjects", new BsonArray
+                                                {
+                                                    "$$item",
+                                                    new BsonDocument
+                                                    {
+                                                        {
+                                                            "User", new BsonDocument
+                                                            {
+                                                                {
+                                                                    "$arrayElemAt", new BsonArray
+                                                                    {
+                                                                        new BsonDocument
+                                                                        {
+                                                                            {
+                                                                                "$filter", new BsonDocument
+                                                                                {
+                                                                                    {
+                                                                                        "input","$Users"
+                                                                                    },
+                                                                                    {
+                                                                                        "as","user"
+                                                                                    },
+                                                                                    {
+                                                                                        "cond", new BsonDocument
+                                                                                        {
+                                                                                            {
+                                                                                                "$eq", new BsonArray
+                                                                                                {
+                                                                                                    "$$item.AccountId",
+                                                                                                    "$$user.AccountId"
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        -1
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }).As<ConversationConvert>().ToListAsync();
+
+            Debug.WriteLine(aggry);
+
+            return aggry;
         }
 
-        public async Task<ConversationCollection?> GetConversation(string from, string to)
+        public async Task<ConversationConvert?> GetConversation(string from, string to)
         {
             var buider = Builders<ConversationCollection>.Filter;
             var filter = buider.And
                 (
                    
-                    Builders<ConversationCollection>.Filter.All("Owners", new[] { from, to }),
+                    Builders<ConversationCollection>.Filter.All("Owners", new List<ObjectId> { ObjectId.Parse(from),ObjectId.Parse(to)}),
 
                     Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, false)
 
                 );
 
-            var project = Builders<ConversationCollection>.Projection
-                .Include(x => x.Id)
-                .Include(x => x.Owners)
-                .Slice(x=>x.Messages,-10);
-               
+            var aggry = await _collection.Aggregate()
+                 .Match(filter)
+                 .AppendStage<BsonDocument>(new BsonDocument
+                 {
+                     {
+                         "$lookup", new BsonDocument
+                         {
+                             {
+                                 "from",nameof(UserCollection)
+                             },
+                             {
+                                 "localField","Owners"
+                             },
+                             {
+                                 "foreignField","AccountId"
+                             },
+                             {
+                                 "pipeline", new BsonArray
+                                 {
+                                     new BsonDocument
+                                     {
+                                         {
+                                             "$project", new BsonDocument
+                                             {
+                                                 {
+                                                     "_id",0
+                                                 },
+                                                 {
+                                                     "AccountId",1
+                                                 },
+                                                 {
+                                                     "FistName",1
+                                                 },
+                                                 {
+                                                     "UserSate",1
+                                                 }
+                                             }
+                                         }
+                                     }
+                                 }
+                             },
+                             {
+                                 "as","OwnerResult"
+                             }
+                         }
+                     }
+                 })
+                 .AppendStage<BsonDocument>(new BsonDocument
+                 {
+                    {
+                        "$addFields", new BsonDocument
+                        {
+                            {
+                                "sliceMessage",new BsonDocument
+                                {
+                                    {
+                                        "$slice", new BsonArray
+                                        {
+                                            "$Messages",-10
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "slicePindMessage", new BsonDocument
+                                {
+                                    {
+                                        "$slice", new BsonArray
+                                        {
+                                            "$MessagePinds",-5
+                                        }
+                                    }
+                                }
+                            }
+                            
+                        }
+                    }
+                 })
               
+               
+                 
+                 .Project(new BsonDocument
+                 {
+                     {
+                         "Owners", "$OwnerResult"
+                     },
+                     {
+                         "Messages", new BsonDocument
+                         {
+                             {
+                                 "$map", new BsonDocument
+                                 {
+                                     {
+                                         "input","$sliceMessage"
+                                     },
+                                     {
+                                         "as","item"
+                                     },
+                                     {
+                                         "in", new BsonDocument
+                                         {
+                                             {
+                                                 "$mergeObjects", new BsonArray
+                                                 {
+                                                     "$$item",
+                                                     new BsonDocument
+                                                     {
+                                                         {
+                                                             "User", new BsonDocument
+                                                               {
 
+                                                                  {
+                                                                       "$arrayElemAt", new BsonArray
+                                                                       {
+                                                                            new BsonDocument
+                                                                            {
+                                                                                {
+                                                                                    "$filter", new BsonDocument
+                                                                                    {
+                                                                                        {
+                                                                                            "input","$OwnerResult"
+                                                                                         },
+                                                                                        {
+                                                                                            "as","user"
+                                                                                         },
+                                                                                        {
+                                                                                            "cond", new BsonDocument
+                                                                                            {
+                                                                                                {
+                                                                                                    "$eq", new BsonArray
+                                                                                                    {  
+                                                                                                     "$$item.AccountId",
+                                                                                                     "$$user.AccountId"
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                         }
+                                                                                    }
+                                                                                }
+                                                                             },
+                                                                         -1
+                                                                        }
+                                                                  }
+                                                             }
+                                                                 
+                                                             
+                                                         }
+                                                     }
+                                                 }
+                                             }
+                                         }
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 }).As<ConversationConvert>().FirstOrDefaultAsync();
 
-            var result = await _collection.Find(filter).Project<ConversationCollection>(project).FirstOrDefaultAsync();
-
-            return result;
+            Debug.WriteLine(aggry);
+            return aggry;
 
         }
 
         public async Task<ConversationCollection?> GetInforConversation(string UserId,string ConversationId)
         {
-            var filter= Builders<ConversationCollection>.Filter.Where(x=>x.Id == ConversationId&&x.Owners!.Any(x=>x.Equals(UserId)));
+            var filter= Builders<ConversationCollection>.Filter.Where(x=>x.Id == ConversationId&&x.Owners!.Any(x=>x.Equals(ObjectId.Parse(UserId))));
             var projection = Builders<ConversationCollection>.Projection.
                 Include(x => x.Id)
                 .Include(x => x.IsGroup);

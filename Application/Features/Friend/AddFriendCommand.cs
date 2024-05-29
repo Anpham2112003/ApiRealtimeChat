@@ -23,7 +23,7 @@ namespace Application.Features.Friend
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
-
+        
         public HandAddFriendCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor)
         {
             _unitOfWork = unitOfWork;

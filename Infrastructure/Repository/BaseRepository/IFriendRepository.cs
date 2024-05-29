@@ -18,5 +18,6 @@ namespace Infrastructure.Repository.BaseRepository
         public  Task<GetInfoWaitAccecptConvert?> GetInfoFromWatiList(string AccountId, int skip, int limit);
         public Task AcceptFriend(string myId, string WaitListId);
         public Task AddToWaitlistAsync(string AccountId, string WaitListId);
+        public Task<UpdateResult> CancelFriendResquestAsync(string MyId, string CancelId);
     }
 }

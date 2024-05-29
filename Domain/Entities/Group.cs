@@ -12,6 +12,6 @@ namespace Domain.Entities
         public string? Avatar {  get; set; }
         public int TotalMember {  get; set; }
         public List<Member>? Members { get; set; }
-        public List<MessagePind>? MessagePinds { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

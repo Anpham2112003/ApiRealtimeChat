@@ -1,33 +1,27 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
+﻿using Domain.Entities;
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Entities
+namespace Domain.ResponeModel.BsonConvert
 {
-    public class ConversationCollection : BaseCollection
+    public class ConversationConvert
     {
-        public ConversationCollection()
-        {
-            
-        }
-
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
-        public List<ObjectId>? Owners { get; set; }
+        public List<User>? Owners { get; set; }
         public List<Message>? Messages { get; set; }
         public List<PindMessage>? MessagePinds { get; set; }
-        public bool IsGroup {  get; set; }
+        public bool IsGroup { get; set; }
 
         [BsonIgnoreIfNull]
         public Group? Group { get; set; }
-        
         public DateTime Seen { get; set; }
         public DateTime CreatedAt { get; set; }
-        
+        public DateTime UpdatedAt { get; set; }
     }
 }

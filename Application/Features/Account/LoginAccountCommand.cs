@@ -7,11 +7,14 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Application.Features.Account
@@ -46,21 +49,27 @@ namespace Application.Features.Account
         {
             try
             {
-                var checkAccount = await _unitOfWork.accountRepository.FindAccountByEmail(request.Email!);
-
-                if (checkAccount is null || checkAccount.IsDelete) return Result<LoginResponseModel>.Failuer(AccountError.AccountIncorrect());
+                var checkAccount = await _unitOfWork.accountRepository.GetAccountInformationAsync(request.Email!);
+                
+                if (checkAccount is null || checkAccount.IsDelete) 
+                    return Result<LoginResponseModel>.Failuer(AccountError.AccountIncorrect());
 
                 var compare = HashLibrary.VerifyHash(checkAccount!.Password!, request!.Password!);
 
+                var jsonUser = JsonSerializer.Serialize(checkAccount.User);
+                
                 if(compare is false) return Result<LoginResponseModel>.Failuer(AccountError.AccountIncorrect());
 
 
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.Email, request.Email!),
-                    new Claim(ClaimTypes.PrimarySid,checkAccount.Id!.ToString())
+                    new Claim(ClaimTypes.PrimarySid,checkAccount.Id!.ToString()),
+                    new Claim(ClaimTypes.UserData,jsonUser),
+                    
                 };
 
+                
 
                 var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
 

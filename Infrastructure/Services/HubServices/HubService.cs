@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -16,7 +17,7 @@ using System.Threading.Tasks;
 namespace Infrastructure.Services.HubServices
 {
 
-    [Authorize]
+    
     public class HubService : Hub<IHubServices>
     {
 
@@ -27,17 +28,23 @@ namespace Infrastructure.Services.HubServices
             _unitOfWork = unitOfWork;
         }
 
+        
         public async Task JoinGroup(string GroupId)
         {
-            var UserId= Context.User.FindFirstValue(ClaimTypes.PrimarySid);
+            var UserId = Context.User!.GetIdFromClaim();
 
-            var check = await _unitOfWork.conversationRepository.GetInforConversation(UserId, GroupId);
-
-            if(check is null) Context.Abort();
+            var check = await _unitOfWork.conversationRepository.GetInforConversation(UserId,GroupId);
+            
+            if(check == null) Context.Abort();
+         
 
             await Groups.AddToGroupAsync(Context.ConnectionId,GroupId);
+
+            await Clients.Client(Context.ConnectionId).Notification(UserId,"Joined");
         }
 
+
+       
         
 
 
@@ -49,8 +56,8 @@ namespace Infrastructure.Services.HubServices
             var UserId = Context.User.FindFirstValue(ClaimTypes.PrimarySid);
 
             await _unitOfWork.userRepository.ChangeStateUserAsync(UserId,Domain.Enums.UserState.Online);
-            
-            await Clients.Client(Context.ConnectionId).SendAsync("Connection","Connection success  "+UserId);
+
+            await Clients.Client(Context.ConnectionId).Notification(UserId, "Connected success!");
 
             await base.OnConnectedAsync();
         }
@@ -66,10 +73,7 @@ namespace Infrastructure.Services.HubServices
 
 
 
-        public async Task SendMessageToGroup(string GroupId, Message message)
-        {
-           await Clients.Group(GroupId).SendAsync("ReceiveMessageGroup", message);
-        }
+     
 
     }
 }

@@ -14,8 +14,6 @@ namespace Domain.Entities
     public class UserCollection : BaseCollection
     {
 
-
-        
        
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }

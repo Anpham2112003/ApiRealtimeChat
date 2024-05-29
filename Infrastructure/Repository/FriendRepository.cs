@@ -15,17 +15,23 @@ namespace Infrastructure.Repository
 {
     public class FriendRepository : AbstractRepository<FriendCollection>, IFriendRepository
     {
-        private IMongoCollection<UserCollection> _userCollection;
+        private IMongoCollection<UserCollection>? _userCollection;
         public FriendRepository(IMongoDB mongoDB) : base(mongoDB)
         {
             base._collection = mongoDB.GetCollection<FriendCollection>(nameof(FriendCollection));
-            _userCollection = mongoDB.GetCollection<UserCollection>(nameof(UserCollection));
+
+            var AccountIdIndex = Builders<FriendCollection>.IndexKeys.Ascending(x => x.AccountId);
+            
+            _collection.Indexes.CreateOne(new CreateIndexModel<FriendCollection>(AccountIdIndex, new CreateIndexOptions { Unique=true}));
         }
 
         public async Task AddFriendAsync(string AccountId, string FriendId)
         {
             var fillter = Builders<FriendCollection>
-                .Filter.Eq(x => x.AccountId, AccountId);
+                .Filter.And(
+                    Builders<FriendCollection>.Filter.Eq(x => x.AccountId, AccountId),
+                    Builders<FriendCollection>.Filter.Ne("Friends._id", ObjectId.Parse(FriendId))
+                );
 
             var update = Builders<FriendCollection>
                 .Update
@@ -186,6 +192,16 @@ namespace Infrastructure.Repository
             var update = Builders<FriendCollection>.Update.Push(x => x.WaitingList, ObjectId.Parse(WaitListId));
 
             await _collection!.UpdateOneAsync(filter, update,new UpdateOptions() { IsUpsert=true});
+        }
+
+        public async Task<UpdateResult> CancelFriendResquestAsync(string MyId, string CancelId)
+        {
+            var filter = Builders<FriendCollection>.Filter
+                .Where(x=>x.Id==CancelId&&x.WaitingList.Any(x=>x.Equals(ObjectId.Parse(MyId))));
+
+            var update = Builders<FriendCollection>.Update.Pull(x=>x.WaitingList, ObjectId.Parse(MyId));
+
+            return await _collection!.UpdateOneAsync(filter, update);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("user/info/{id}")]
+        [HttpGet("user/profile/{id}")]
         public async Task<IActionResult> GetInforUser(string id)
         {
             var result  = await _mediator.Send(new GetInforUserCommand(id));
@@ -25,7 +25,7 @@ namespace ApiRealtimeChat.Controllers
             return result.IsFailuer ? NotFound(result.Error) : Ok(result.Data);
         }
 
-        [HttpPut("user/info/edit")]
+        [HttpPut("user/profile/edit")]
         public async Task<IActionResult> UpdateInforUser(UpdateInforUserCommand command)
         {
             var result = await _mediator.Send(command);

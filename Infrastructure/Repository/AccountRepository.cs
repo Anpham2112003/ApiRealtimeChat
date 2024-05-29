@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.ResponeModel.BsonConvert;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
@@ -18,7 +19,10 @@ namespace Infrastructure.Repository
         public AccountRepository(IMongoDB mongoDB) : base(mongoDB)
         {
             base._collection = mongoDB.GetCollection<AccountCollection>(nameof(AccountCollection));
-           
+
+            var index = Builders<AccountCollection>.IndexKeys.Ascending(x => x.Email);
+
+            _collection.Indexes.CreateOne(new CreateIndexModel<AccountCollection>(index, new CreateIndexOptions { Unique = true }));
         }
 
         public async Task<AccountCollection?> FindAccountByEmail(string email)
@@ -39,7 +43,7 @@ namespace Infrastructure.Repository
                 .Set(x=>x.IsDelete,true)
                 .Set(x=>x.DeletedAt,DateTime.UtcNow);
       
-            await base._collection.FindOneAndUpdateAsync(filter, update);
+            await base._collection!.UpdateOneAsync(filter, update);
         }
 
         public async Task<bool> CheckAccountExist(string id)
@@ -55,6 +59,43 @@ namespace Infrastructure.Repository
                 .FirstOrDefaultAsync();
 
            return result is null ? false: true;
+        }
+
+        public async Task<AccountInformationConvert?> GetAccountInformationAsync(string Email)
+        {
+            
+            var result = await _collection.Aggregate()
+                .Match(x=>x.Email==Email)
+                .Lookup(nameof(UserCollection),"_id","AccountId","User")
+                .Project(new BsonDocument
+                {
+                    {
+                        "_id",1
+                    },
+                    {
+                        "Email",1
+                    },
+                    {
+                        "Password",1
+                    },
+                    {
+                        "IsDelete",1
+                    },
+                    {
+                        "User",new BsonDocument
+                        {
+                            {
+                                "$arrayElemAt", new BsonArray
+                                {
+                                    "$User",-1
+                                }
+                            }
+                        }
+                    }
+                }).As<AccountInformationConvert>()
+                .FirstOrDefaultAsync();
+
+            return result;
         }
     }
 }

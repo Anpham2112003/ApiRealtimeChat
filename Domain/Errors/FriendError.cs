@@ -16,6 +16,8 @@ namespace Application.Errors
 
             => new Error("FriendError.DocumentNorFound", $"  FriendId or AccountId was not Exists !");
 
+        public static Error NotFoundInWaitList
+            => new Error("NotFound", "Not found in wait list!");
       
     }
 }

@@ -9,7 +9,11 @@ namespace Infrastructure.Services.HubServices
 {
     public interface IHubServices
     {
-        public Task AddGroupAsync(string GroupName, string connectionId);
-        public Task SendMessage(string GroupId, Message message);
+        
+        public Task ReceiveMessage( string conversationId,object message);
+
+        public Task Notification(string method,object message);
+
+
     }
 }

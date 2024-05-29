@@ -9,19 +9,22 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    public class Message : Change
+    public class Message : Change,SoftDelete
     {
         
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
         
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? UserId { get; set; }
+        public string? AccountId { get; set; }
         public MessageType MessageType { get; set; }
         public string? Content { get; set; }
+
+        [BsonIgnoreIfNull]
+        public User? User { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
-
+        public bool IsDelete { get; set; }
+        public DateTime DeletedAt { get; set; }
     }
 }

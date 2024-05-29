@@ -18,5 +18,9 @@ namespace Domain.ResponeModel
             Limit = limit;
             Data = data;
         }
+
+        public PagingRespone()
+        {
+        }
     }
 }

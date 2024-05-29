@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -29,7 +30,7 @@ namespace Application.Features.Message
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IHubContext<HubService,IHubServices> _hub;
-        public HandSendMessageCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor, IHubContext<HubService> hub)
+        public HandSendMessageCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor, IHubContext<HubService, IHubServices> hub)
         {
             _unitOfWork = unitOfWork;
             _contextAccessor = contextAccessor;
@@ -40,20 +41,22 @@ namespace Application.Features.Message
         {
             try
             {
-                var UserId = _contextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
+
+                var User = _contextAccessor.HttpContext!.User.GetUserFromToken();
 
                 var message = new Domain.Entities.Message
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
-                    UserId = UserId,
+                    AccountId = User.AccountId,
                     Content = request.Content,
                     MessageType = MessageType.Message,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    User=User,
                 };
+                
+                var result = await _unitOfWork.messageRepository.SendMessageAsync(request.Id!, User.AccountId!, message);
 
-                var result = await _unitOfWork.messageRepository.SendMessageAsync(request.Id!, UserId, message);
-
-                await _hub.Clients.Groups(request.Id!).SendMessage(request.Id!, message);
+                await _hub.Clients.Groups(request.Id!).ReceiveMessage(request.Id!, message);
 
                 if (result.ModifiedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
 

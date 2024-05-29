@@ -39,19 +39,22 @@ namespace Application.Features.Group
                 var group = new ConversationCollection
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
-                    Owners = new List<string> { UserId },
+                    Owners = new List<ObjectId> { ObjectId.Parse(UserId) },
                     IsGroup = true,
                     Messages = new List<Domain.Entities.Message>(),
+                    MessagePinds = new List<PindMessage>(),
+                    Seen = DateTime.UtcNow,
+                    CreatedAt=DateTime.UtcNow,
                     Group = new Domain.Entities.Group
                     {
                         Name = request.Name,
-                        MessagePinds = new List<MessagePind> { },
                         TotalMember = 1,
                         Avatar = "",
                         Members = new List<Member>
                         {
                             new Member(UserId,Domain.Enums.GroupRoles.Created)
-                        }
+                        },
+                        UpdatedAt=DateTime.UtcNow,
                     }
                 };
 

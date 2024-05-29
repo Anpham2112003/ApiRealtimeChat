@@ -26,7 +26,7 @@ namespace Infrastructure.Repository
             var filter =Builders<ConversationCollection>.Filter.Where(x=>x.Id== Id&&x.IsGroup==true);
 
             var update = Builders<ConversationCollection>.Update
-                .Set(x=>x.UpdatedAt,DateTime.UtcNow)
+                .Set(x=>x.Group!.UpdatedAt,DateTime.UtcNow)
                 .Set(x=>x.Group!.Avatar, AvatarUrl);
 
            return await _collection!.UpdateOneAsync(filter, update);
@@ -35,12 +35,13 @@ namespace Infrastructure.Repository
         public async Task<UpdateResult> AddManyMemberToGroup(string MyId,string GroupId, IEnumerable<string> Ids)
         {
             var members = new HashSet<Member>();
-
+            var ObjIds=new HashSet<ObjectId>();
             foreach (var item in Ids!)
             {
                 var member = new Member(item, Domain.Enums.GroupRoles.Member);
 
                 members.Add(member);
+                ObjIds.Add(ObjectId.Parse(item));
             }
 
             var filter = Builders<ConversationCollection>
@@ -52,7 +53,7 @@ namespace Infrastructure.Repository
 
             var update = Builders<ConversationCollection>
                 .Update
-                .AddToSetEach(x=>x.Owners,Ids)
+                .AddToSetEach(x=>x.Owners,ObjIds)
                 .PushEach(x => x.Group!.Members, members);
 
            return await _collection!.UpdateOneAsync(filter, update);
@@ -70,7 +71,7 @@ namespace Infrastructure.Repository
 
             var update = Builders<ConversationCollection>
                 .Update
-                .Set(x=>x.UpdatedAt,DateTime.UtcNow)
+                .Set(x=>x.Group!.UpdatedAt,DateTime.UtcNow)
                 .Set(x=>x.Group!.Name,Name);
 
             return   await _collection!.UpdateOneAsync(filter,update);
@@ -94,7 +95,7 @@ namespace Infrastructure.Repository
 
             var update = Builders<ConversationCollection>
                 .Update
-                .Pull(x=>x.Owners,MemberId)
+                .Pull(x=>x.Owners,ObjectId.Parse(MemberId))
                 .PullFilter(x => x.Group!.Members, Builders<Member>.Filter.Eq(x => x.Id, MemberId));
 
             await _collection!.UpdateOneAsync(filter, update);
@@ -123,7 +124,7 @@ namespace Infrastructure.Repository
                 );
 
             var update = Builders<ConversationCollection>.Update
-                .Pull(x=>x.Owners,UserId)
+                .Pull(x=>x.Owners,ObjectId.Parse(UserId))
                 .PullFilter(x=>x.Group!.Members,Builders<Member>.Filter.Eq(x=>x.Id, UserId));
 
             return await _collection!.UpdateOneAsync(filter,update);

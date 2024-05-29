@@ -12,9 +12,9 @@ namespace Infrastructure.Repository.BaseRepository
     public interface IConversationRepository:BaseRepository<ConversationCollection>
     {
 
-        public Task<ConversationCollection?> GetConversation(string from, string to);
+        public Task<ConversationConvert?> GetConversation(string from, string to);
 
-        public Task<List<ConversationCollection>> GetAllConversationAsync(string UserId, int skip, int limit);
+        public Task<List<ConversationConvert>> GetAllConversationAsync(string UserId, int skip, int limit);
         public Task<ConversationCollection?> GetInforConversation(string UserId, string ConversationId);
         public  Task<DeleteResult> RemoveConversation(string ConversationId);
 

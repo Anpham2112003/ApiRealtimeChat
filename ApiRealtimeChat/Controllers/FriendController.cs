@@ -53,6 +53,14 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
         }
 
+        [HttpDelete("friend/cancel/{id}")]
+        public async Task<IActionResult> CancelFriendRequset(string id)
+        {
+            var result = await _mediator.Send(new CancelFriendRequestCommand { Id = id });
+
+            return result.IsSuccess?Ok(result?.Data) : NotFound(result.Error);
+        }
+
         [HttpDelete("friend/delete/{id}")]
         public async Task<IActionResult> RemoveFriend(string id)
         {

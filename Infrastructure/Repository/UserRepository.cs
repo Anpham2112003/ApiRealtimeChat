@@ -18,6 +18,18 @@ namespace Infrastructure.Repository
         public UserRepository(IMongoDB mongoDB) : base(mongoDB)
         {
             base._collection=mongoDB.GetCollection<UserCollection>(nameof(UserCollection));
+
+            var AccountIdIndex = Builders<UserCollection>.IndexKeys.Ascending(x => x.AccountId);
+            var fullNameIndex= Builders<UserCollection>.IndexKeys.Text(x => x.FullName);
+
+            var indexs = new List<CreateIndexModel<UserCollection>>()
+            {
+                new CreateIndexModel<UserCollection>(AccountIdIndex,new CreateIndexOptions<UserCollection>{Unique=true} ),
+                new CreateIndexModel<UserCollection>(fullNameIndex)
+            };
+
+            _collection.Indexes.CreateMany(indexs);
+
         }
 
         public async Task<UserCollection?> FindUserByAccountId(string id)

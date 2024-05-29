@@ -117,8 +117,24 @@ builder.Services.AddAuthentication(op =>
     
     .AddCookie();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "Angular",
+        builder =>
+        {
+            builder
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowAnyOrigin();
+        });
+});
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(op =>
+{
+    
+  
+});
+
 
 builder.Services.AddMediatR(op =>
 {
@@ -144,7 +160,7 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-
+app.UseCors("Angular");
 
 app.MapControllers();
 
