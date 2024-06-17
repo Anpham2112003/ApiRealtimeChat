@@ -3,6 +3,7 @@ using Domain.Entities;
 using Domain.ResponeModel;
 using Domain.Settings;
 using Domain.Ultils;
+using Infrastructure.Services.RedisSevices;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -10,11 +11,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Application.Features.Account
@@ -34,19 +37,20 @@ namespace Application.Features.Account
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOptionsMonitor<JwtSetting> _options;
         private readonly IHttpContextAccessor _contextAccessor;
-
-        public HandGoogleLoginCommnand(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options, IHttpContextAccessor contextAccessor)
+        private readonly IRedisService _redisService;
+        public HandGoogleLoginCommnand(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options, IHttpContextAccessor contextAccessor, IRedisService redisService)
         {
             _unitOfWork = unitOfWork;
             _options = options;
             _contextAccessor = contextAccessor;
+            _redisService = redisService;
         }
 
         public async Task<Result<LoginResponseModel>> Handle(GoogleLoginCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var check = await _unitOfWork.accountRepository.FindAccountByEmail("Google:" + request.Email!);
+                var check = await _unitOfWork.accountRepository.GetAccountInformationAsync("Google:" + request.Email!);
                 if (check is null)
                 {
                     var account = new AccountCollection()
@@ -67,6 +71,9 @@ namespace Application.Features.Account
                         LastName = request.LastName,
                         FullName = request.FistName + " " + request.LastName,
                         State=Domain.Enums.UserState.Offline,
+                        Avatar="",
+                        Gender=true,
+          
                     };
 
                     var addAccount = _unitOfWork.accountRepository.InsertAsync(account);
@@ -75,32 +82,67 @@ namespace Application.Features.Account
 
                     await Task.WhenAll(addAccount, addUser);
 
+                    var jsonUser = JsonSerializer.Serialize(new Domain.Entities.User
+                    {
+                        AccountId = account.Id,
+                        Avatar = "",
+                        Name = user.FistName,
+                        State = user.State
+                    });
+
                     var claims = new[]
                     {
                         new Claim(ClaimTypes.Email,account.Email),
-                        new Claim(ClaimTypes.PrimarySid,account.Id.ToString())
+                        new Claim(ClaimTypes.PrimarySid,account.Id.ToString()),
+                        new Claim(ClaimTypes.UserData,jsonUser)
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
-                    var refeshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
+                    var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
 
-                    return Result<LoginResponseModel>.Success(new LoginResponseModel(account.Id.ToString(), accessToken, refeshToken));
+                    var hashs = new HashEntry[]
+                    {
+                        new HashEntry("Email",account.Email),
+                        new HashEntry("Name",user.FistName),
+                        new HashEntry("Avatar",user.Avatar??""),
+                        new HashEntry("State",user.State.ToString()),
+                        new HashEntry("ReFreshToken",refreshToken)
+                    };
+
+                    await _unitOfWork.accountRepository.UpdateTokenUser(account.Id, refreshToken);
+
+                    await _redisService.SetHashValueToRedis(account.Id, hashs);
+
+                    return Result<LoginResponseModel>.Success(new LoginResponseModel(account.Id.ToString(), accessToken, refreshToken));
                 }
                 else
                 {
+                    var jsonUser = JsonSerializer.Serialize(check.User);
 
                     var claims = new[]
                     {
                         new Claim(ClaimTypes.Email,check.Email!),
-                        new Claim(ClaimTypes.PrimarySid,check.Id!.ToString())
+                        new Claim(ClaimTypes.PrimarySid,check.Id!.ToString()),
+                        new Claim(ClaimTypes.UserData,jsonUser)
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
-                    var refeshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
-                    
-                   
+                    var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
 
-                    return Result<LoginResponseModel>.Success(new LoginResponseModel(check.Id.ToString(), accessToken, refeshToken));
+                    var hashs = new HashEntry[]
+                   {
+                        new HashEntry("Email",check.Email),
+                        new HashEntry("Name",check.User!.Name),
+                        new HashEntry("Avatar",check.User.Avatar??""),
+                        new HashEntry("State",check.User.State.ToString()),
+                        new HashEntry("ReFreshToken",refreshToken)
+                   };
+
+                    await _unitOfWork.accountRepository.UpdateTokenUser(check.Id, refreshToken);
+                   
+                    await _redisService.SetHashValueToRedis(check.Id,hashs);
+
+                    return Result<LoginResponseModel>.Success(new LoginResponseModel(check.Id.ToString(), accessToken, refreshToken));
                 }
             }
             catch (Exception)

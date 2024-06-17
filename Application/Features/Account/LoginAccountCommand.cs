@@ -2,12 +2,14 @@
 using Domain.ResponeModel;
 using Domain.Settings;
 using Domain.Ultils;
+using Infrastructure.Services.RedisSevices;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -37,12 +39,13 @@ namespace Application.Features.Account
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOptionsMonitor<JwtSetting> _options;
         private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public HandLoginAccount(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options, IHttpContextAccessor httpContextAccessor)
+        private readonly IRedisService _redisService;
+        public HandLoginAccount(IUnitOfWork unitOfWork, IOptionsMonitor<JwtSetting> options, IHttpContextAccessor httpContextAccessor, IRedisService redisService)
         {
             _unitOfWork = unitOfWork;
             _options = options;
             _httpContextAccessor = httpContextAccessor;
+            _redisService = redisService;
         }
 
         public async Task<Result<LoginResponseModel>> Handle(LoginAccountCommand request, CancellationToken cancellationToken)
@@ -75,7 +78,18 @@ namespace Application.Features.Account
 
                 var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddDays(7));
 
-                
+                var hashs = new HashEntry[]
+                {
+                    new HashEntry("Email",checkAccount.Email),
+                    new HashEntry("Name",checkAccount.User!.Name),
+                    new HashEntry("Avatar",checkAccount.User.Avatar??""),
+                    new HashEntry("State",checkAccount.User.State.ToString()),
+                    new HashEntry("ReFreshToken",refreshToken)
+                };
+
+                await _redisService.SetHashValueToRedis(checkAccount.Id, hashs);
+
+                await _unitOfWork.accountRepository.UpdateTokenUser(checkAccount.Id, refreshToken);
 
                 return Result<LoginResponseModel>.Success(new LoginResponseModel(checkAccount.Id.ToString(), accessToken, refreshToken));
             }

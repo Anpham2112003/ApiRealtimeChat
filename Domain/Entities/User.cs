@@ -11,7 +11,7 @@ namespace Domain.Entities
     [BsonIgnoreExtraElements]
     public class User
     {
-        [BsonElement("FistName")]
+        [BsonElement("FullName")]
         public string? Name { get; set; }
 
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]       

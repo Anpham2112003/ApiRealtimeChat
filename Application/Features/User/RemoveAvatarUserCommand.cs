@@ -5,6 +5,7 @@ using Domain.Ultils;
 using Infrastructure.Services;
 using Infrastructure.Unit0fWork;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -16,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Application.Features.User
 {
-    public class RemoveAvatarUserCommand : IRequest<Result<UploadAvatarResponeModel>>
+    public class RemoveAvatarUserCommand : IRequest<Result<string>>
     {
         public string? AccountId { get; set; }
 
@@ -26,41 +27,37 @@ namespace Application.Features.User
         }
     }
 
-    public class HandRemoveAvatarUserCommand : IRequestHandler<RemoveAvatarUserCommand, Result<UploadAvatarResponeModel>>
+    public class HandRemoveAvatarUserCommand : IRequestHandler<RemoveAvatarUserCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAwsServices _awsServices;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _contextAccessor;
 
-        public HandRemoveAvatarUserCommand(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration)
+        public HandRemoveAvatarUserCommand(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration, IHttpContextAccessor contextAccessor)
         {
             _unitOfWork = unitOfWork;
             _awsServices = awsServices;
             _configuration = configuration;
+            _contextAccessor = contextAccessor;
         }
 
 
 
-        public async Task<Result<UploadAvatarResponeModel>> Handle(RemoveAvatarUserCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(RemoveAvatarUserCommand request, CancellationToken cancellationToken)
         {
             try
             {
+               
                 var user = await _unitOfWork.userRepository.FindUserByAccountId(request.AccountId!);
 
-                if (user is null) return Result<UploadAvatarResponeModel>.Failuer(UserError.UserNotFound(request.AccountId!));
+                if (string.IsNullOrEmpty(user!.Avatar)) return Result<string>.Failuer(UserError.AvatarNull);
 
-                if (user.Avatar is null) return Result<UploadAvatarResponeModel>.Failuer(UserError.AvatarNull);
+                await _awsServices.RemoveFileAsync(_configuration["Aws:Bucket"]!, user.Avatar.Split('/').Last()) ;
 
-                await _awsServices.RemoveFileAsync(_configuration["Aws:Bucket"]!, user.Avatar);
+                await _unitOfWork.userRepository.RemoveAvatarUser(user.AccountId!);
 
-                var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId, request.AccountId!);
-
-                var update = Builders<UserCollection>.Update.Set(x => x.Avatar, null);
-               
-
-                await _unitOfWork.userRepository.UpdateAsync(filter, update);
-
-                return Result<UploadAvatarResponeModel>.Success(new UploadAvatarResponeModel("Remove success!", request.AccountId, user.Avatar));
+                return Result<string>.Success(user.Avatar);
             }
             catch (Exception)
             {

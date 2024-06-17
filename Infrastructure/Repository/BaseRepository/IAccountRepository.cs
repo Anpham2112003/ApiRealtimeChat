@@ -16,6 +16,8 @@ namespace Infrastructure.Repository.BaseRepository
         public Task SoftDeleteAccount(AccountCollection account);
         public  Task<bool> CheckAccountExist(string id);
         public  Task<AccountInformationConvert?> GetAccountInformationAsync(string Email);
+        public  Task<UpdateResult> UpdateTokenUser(string Id, string Token);
+        public  Task UpdatePassword(string Email, string Password);
 
     }
 }

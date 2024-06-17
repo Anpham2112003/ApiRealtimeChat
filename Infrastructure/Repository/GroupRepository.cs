@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.ResponeModel.BsonConvert;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
@@ -128,6 +129,135 @@ namespace Infrastructure.Repository
                 .PullFilter(x=>x.Group!.Members,Builders<Member>.Filter.Eq(x=>x.Id, UserId));
 
             return await _collection!.UpdateOneAsync(filter,update);
+        }
+
+        public async Task<List<MembersGroupConvert>> GetMembersInGroup(string ConversationId, int skip,int limit)
+        {
+            var aggry =await _collection.Aggregate()
+                .Match(x => x.Id == ConversationId && x.IsGroup == true)
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$addFields", new BsonDocument
+                        {
+                            {
+                                "sliceMember", new BsonDocument
+                                {
+                                    {
+                                        "$slice", new BsonArray
+                                        {
+                                            "$Group.Members",
+                                            skip,limit
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }).AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","sliceMember._id"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline", new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Result"
+                            }
+                        }
+                    }
+                }).Project(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "Members", new BsonDocument
+                        {
+                            {
+                                "$map", new BsonDocument
+                                {
+                                    {
+                                        "input", "$sliceMember"
+                                    },
+                                    {
+                                        "as","item"
+                                    },
+                                    {
+                                        "in", new BsonDocument
+                                        {
+                                            {
+                                                "$mergeObjects", new BsonArray
+                                                {
+                                                    "$$item",
+                                                    new BsonDocument
+                                                    {
+                                                        {
+                                                            "$arrayElemAt", new BsonArray
+                                                            {
+                                                                "$Result",
+                                                                new BsonDocument
+                                                                {
+                                                                    {
+                                                                        "$indexOfArray", new BsonArray
+                                                                        {
+                                                                           
+                                                                                "$Result.AccountId","$$item._id"
+                                                                            
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }).As<ListMemberInGroupConvert>().FirstOrDefaultAsync();
+
+            Debug.WriteLine(aggry);
+
+            return aggry.Members!;
         }
     }
 }

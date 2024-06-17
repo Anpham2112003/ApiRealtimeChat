@@ -30,37 +30,37 @@ namespace Application.Features.User
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAwsServices _awsServices;
         private readonly IConfiguration _configuration;
-
-        public HandUpdateAvartaUser(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration)
+        private readonly IHttpContextAccessor _contextAccessor;
+        public HandUpdateAvartaUser(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration, IHttpContextAccessor contextAccessor)
         {
             _unitOfWork = unitOfWork;
             _awsServices = awsServices;
             _configuration = configuration;
+            _contextAccessor = contextAccessor;
         }
 
         public async Task<Result<UploadAvatarResponeModel>> Handle(UpdateAvatarUserCommand request, CancellationToken cancellationToken)
         {
             try
             {
+                var userId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
+
                 StringBuilder key = new StringBuilder();
                 key.Append("avatar");
                 key.Append(request.AccountId);
                 key.Append(request.Image!.Name);
-                key.Append(Random.Shared.Next(1, 100000000).ToString());
+                key.Append(ObjectId.GenerateNewId());
                 key.Append(Path.GetExtension(request.Image!.FileName));
+
+                var awsUrl = _configuration["Aws:Perfix"] + key.ToString();
 
                 await _awsServices.UploadFileAsync(_configuration["Aws:Bucket"]!, key.ToString(), request.Image);
 
-                var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId,request.AccountId);
+                await _unitOfWork.userRepository.UpdateAvatarUser(userId, awsUrl);
 
-                var update = Builders<UserCollection>.Update.Set(x => x.Avatar, _configuration["Aws:Perfix"] + key.ToString());
-
-                var result = await _unitOfWork.userRepository.UpdateAsync(filter, update);
-
-                if (result.ModifiedCount == 0) return Result<UploadAvatarResponeModel>.Failuer(UserError.UserNotFound(request.AccountId!));
-
+              
                 return Result<UploadAvatarResponeModel>
-                    .Success(new UploadAvatarResponeModel("Upload success!", request.AccountId, _configuration["Aws:Perfix"]?.ToString() +key));
+                    .Success(new UploadAvatarResponeModel("Upload success!", request.AccountId, awsUrl));
             }
             catch (Exception e)
             {

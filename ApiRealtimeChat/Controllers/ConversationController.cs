@@ -16,12 +16,19 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("conversation/{id}")]
+        [HttpGet("conversation/load/{id}")]
         public async Task<IActionResult>GetSingleConversation(string id)
         {
             var result = await _mediator.Send(new GetConversationCommand() { Id = id });
 
             return Ok(result.Data);
+        }
+        [HttpGet("conversation/{id}")]
+        public async Task<IActionResult> GetConversationById(string id)
+        {
+            var result = await _mediator.Send(new GetConversationByIdCommand() { Id = id });
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound();
         }
 
         [HttpGet("conversations")]

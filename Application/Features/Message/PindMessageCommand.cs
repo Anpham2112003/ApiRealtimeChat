@@ -7,6 +7,7 @@ using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,19 +19,17 @@ namespace Application.Features.Message
 {
     public class PindMessageCommand:IRequest<Result<string>>
     {
-        public string? Id {  get; set; }
+        public string? ConversationId {  get; set; }
         public string? MessageId { get; set; }
-        public string? By { get; set; }
-        public string? Content {  get; set; }
-        public MessageType Type { get; set; }
+       
     }
 
     public class HandPindMessageCommand : IRequestHandler<PindMessageCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IHubContext<HubService> _hub;
+        private readonly IHubContext<HubService,IHubServices> _hub;
         private readonly IHttpContextAccessor _httpContext;
-        public HandPindMessageCommand(IUnitOfWork unitOfWork, IHubContext<HubService> hub, IHttpContextAccessor httpContext)
+        public HandPindMessageCommand(IUnitOfWork unitOfWork, IHubContext<HubService,IHubServices> hub, IHttpContextAccessor httpContext)
         {
             _unitOfWork = unitOfWork;
             _hub = hub;
@@ -39,21 +38,38 @@ namespace Application.Features.Message
 
         public async Task<Result<string>> Handle(PindMessageCommand request, CancellationToken cancellationToken)
         {
-            var UserId = _httpContext.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
+           
             try
             {
-                var message = new PindMessage
+                var User = _httpContext.HttpContext!.User.GetUserFromToken();
+               
+                var findMessage =await _unitOfWork.messageRepository.FindMessage(request.ConversationId!,request.MessageId!);
+
+                if (findMessage is null) return Result<string>.Failuer(new Error("Message", "Not found"));
+
+                var pindMessage = new PindMessage
                 {
-                    Id = request.MessageId,
-                    AccountId= UserId,
-                    By = request.By,
-                    Content = request.Content,
-                    Type = request.Type
+                    AccountId = User.AccountId,
+                    By = User.Name,
+                    Content = findMessage.Content,
+                    Id = findMessage.Id,
+                    Type = findMessage.MessageType,
+                };
+                var message = new Domain.Entities.Message
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    MessageType = MessageType.PindMessage,
+                    Content = $"{User.Name} pinned message!",
+                    CreatedAt = DateTime.UtcNow,
                 };
 
-                var result = await _unitOfWork.messageRepository.PindMessage(request.Id!, message);
+                var result = await _unitOfWork.messageRepository.PindMessage(request.ConversationId!,request.MessageId!);
 
                 if( result.MatchedCount==0) return Result<string>.Failuer(ConversationError.NotFound);
+
+                await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!, message);
+
+                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!,message);
 
                 return Result<string>.Success("Ok");
             }

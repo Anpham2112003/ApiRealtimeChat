@@ -21,6 +21,7 @@ namespace Application.Features.Friend
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
 
+
         public HandCancelFriendRequestCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor)
         {
             _unitOfWork = unitOfWork;
@@ -35,6 +36,8 @@ namespace Application.Features.Friend
                 var UserId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
                 var result = await _unitOfWork.friendRepository.CancelFriendResquestAsync(UserId, request.Id!);
+
+                await _unitOfWork.notificationRepository.RemoveNotification(request.Id!, UserId, Domain.Enums.NotificationType.InviteFriend);
 
                 if(result.MatchedCount==0) return Result<string>.Failuer(FriendError.NotFoundInWaitList);
 

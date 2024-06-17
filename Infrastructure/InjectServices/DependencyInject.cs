@@ -15,6 +15,8 @@ using Amazon.Runtime;
 using Infrastructure.Services;
 using Amazon.S3;
 using Microsoft.AspNetCore.Http;
+using StackExchange.Redis;
+using Infrastructure.Services.RedisSevices;
 
 
 namespace Infrastructure.InjectServices
@@ -48,6 +50,10 @@ namespace Infrastructure.InjectServices
             services.AddScoped<IMailerServices, MailerServices>();
 
             services.AddHttpContextAccessor();
+
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect("localhost"));
+
+            services.AddScoped<IRedisService,RedisSevice>();
 
             return services;
         }

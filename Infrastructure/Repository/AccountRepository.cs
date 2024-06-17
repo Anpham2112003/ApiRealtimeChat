@@ -97,5 +97,23 @@ namespace Infrastructure.Repository
 
             return result;
         }
+
+        public async Task<UpdateResult> UpdateTokenUser(string Id, string Token)
+        {
+            var filter = Builders<AccountCollection>.Filter.Eq(x=>x.Id, Id);
+
+            var update = Builders<AccountCollection>.Update.Set(x=>x.ReFreshToken, Token);
+
+            return await _collection!.UpdateOneAsync(filter,update);
+        }
+
+        public async Task UpdatePassword(string Email, string Password)
+        {
+            var filter = Builders<AccountCollection>.Filter.Eq(x => x.Email, Email);
+
+            var update = Builders<AccountCollection>.Update.Set(x => x.Password, Password);
+
+            await _collection!.UpdateOneAsync(filter, update);
+        }
     }
 }

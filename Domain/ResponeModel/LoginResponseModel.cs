@@ -19,5 +19,9 @@ namespace Domain.ResponeModel
             AccessToken = accessToken;
             ReFreshToken = reFreshToken;
         }
+
+        public LoginResponseModel()
+        {
+        }
     }
 }

@@ -29,7 +29,7 @@ namespace Domain.Ultils
             var jsonUser = claims.FindFirstValue(ClaimTypes.UserData);
 
             var User = JsonSerializer.Deserialize<User>(jsonUser);
-
+            
             return User!;
         }
     }

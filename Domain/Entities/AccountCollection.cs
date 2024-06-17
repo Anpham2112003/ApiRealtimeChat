@@ -20,6 +20,7 @@ namespace Domain.Entities
         public DateTime CreatedAt { get; set; }
         public bool IsDelete { get; set; }
         public DateTime DeletedAt { get; set; }
+        public string? ReFreshToken { get; set; }
 
     }
 }

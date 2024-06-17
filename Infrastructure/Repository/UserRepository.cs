@@ -1,14 +1,18 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Repository
@@ -47,9 +51,163 @@ namespace Infrastructure.Repository
         public async Task ChangeStateUserAsync(string AccountId, UserState state)
         {
             var filter = Builders<UserCollection>.Filter.Eq(x=>x.AccountId, AccountId);
+
             var update = Builders<UserCollection>.Update.Set(x=>x.State, state);
-          var result =   await _collection!.UpdateOneAsync(filter, update);
-            Debug.WriteLine(result);
+
+            var result =   await _collection!.UpdateOneAsync(filter, update);
+            
+        }
+
+        public async Task UpdateAvatarUser(string AccountId, string avatarUrl)
+        {
+            var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId,AccountId);
+
+            var update = Builders<UserCollection>.Update.Set(x => x.Avatar, avatarUrl);
+
+            await _collection!.UpdateOneAsync(filter, update);
+        }
+
+        public async Task UpdateProfileUser(string AccountId,BsonDocument document)
+        {
+            var filter = Builders<UserCollection>.Filter.Eq(x=>x.AccountId,AccountId);
+
+            await _collection!.UpdateOneAsync(filter, document);
+        }
+
+        public async Task RemoveAvatarUser(string AccountId)
+        {
+            var filter = Builders<UserCollection>.Filter.Eq(x => x.AccountId, AccountId);
+
+            var update = Builders<UserCollection>.Update.Set(x => x.Avatar, null);
+
+            await _collection!.UpdateOneAsync(filter,update);
+        }
+
+        public async Task<List<UserConvert>> SearchUser(string name)
+        {
+            var filter = Builders<UserCollection>.Filter.Regex(x => x.FullName, new Regex($"^{name}"));
+
+            var project = Builders<UserCollection>.Projection.
+                Exclude(x => x.Id)
+                .Exclude(x => x.FistName)
+                .Exclude(x => x.LastName);
+               
+           
+
+            return await _collection.Find(filter).Project<UserConvert>(project).ToListAsync();
+        }
+
+        public async Task<ViewProfileResponeModel?> ViewProfileUser(string Id, string UserId)
+        {
+            var aggry = await _collection.Aggregate()
+                .Match(x => x.AccountId == Id)
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from",nameof(FriendCollection)
+                            },
+                            {
+                                "localField","AccountId"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline", new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "IsFriend", new BsonDocument
+                                                    {
+                                                        {
+                                                            "$in", new BsonArray
+                                                            {
+                                                                UserId,
+                                                                "$Friends._id"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "Invited",new BsonDocument
+                                                    {
+                                                        {
+                                                            "$in", new BsonArray
+                                                            {
+                                                                UserId,
+                                                                "$WaitingList"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Result"
+                            }
+                        }
+                    }
+                }).AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$replaceRoot", new BsonDocument
+                        {
+                            {
+                                "newRoot", new BsonDocument
+                                {
+                                    {
+                                        "$mergeObjects", new BsonArray
+                                        {
+                                            new BsonDocument
+                                            {
+                                                {
+                                                    "$arrayElemAt", new BsonArray
+                                                    {
+                                                    "$Result",0
+                                                    }
+                                                }
+                                            },
+                                            "$$ROOT"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }).Project(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "Result",0
+                    },
+                    {
+                        "FistName",0
+                    },
+                    {
+                        "LastName",0
+                    },
+                    {
+                        "UpdatedAt",0
+                    }
+                }).As<ViewProfileResponeModel>().FirstOrDefaultAsync();
+
+            return aggry;
+
         }
     }
 }

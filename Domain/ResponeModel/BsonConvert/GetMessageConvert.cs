@@ -9,6 +9,6 @@ namespace Domain.ResponeModel.BsonConvert
 {
     public class GetMessageConvert
     {
-        public List<Message>? Messages { get; set; }
+        public List<ClientMessageReceiver>? Messages { get; set; }
     }
 }

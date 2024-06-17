@@ -59,7 +59,7 @@ namespace Domain.Ultils
             }
         }
 
-        public static Error TryValidateToken(string token, string key, out ClaimsPrincipal? claims)
+        public static bool TryValidateToken(string token, string key, out ClaimsPrincipal? claims)
         {
             try
             {
@@ -76,18 +76,15 @@ namespace Domain.Ultils
 
                 claims = handler.ValidateToken(token, prametor, out SecurityToken security);
 
-                return Error.None;
+                return true;
             }
-            catch (SecurityTokenExpiredException e)
+            catch
             {
                 claims = null;
-                return AccountError.TokenExpire(e.Expires);
+                return false ;
             }
-            catch (Exception)
-            {
-                claims = null;
-                return AccountError.TokenNotValid(token);
-            }
+
+
         }
 
         public static ClaimsPrincipal GetClaimsPrincipalFromToken(string token, string key)

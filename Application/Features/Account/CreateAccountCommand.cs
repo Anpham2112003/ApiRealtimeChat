@@ -48,13 +48,15 @@ namespace Application.Features.Account
 
                 if (checkExist is not null) return Result<CreateAccountCommand>.Failuer(AccountError.AccountAllready(request.Email!));
 
+                var hasspassword =HashLibrary.GenerateHash(request.Password!);
+
                 var account = new AccountCollection
                 {
                     Id = request.Id,
                     AccountType = Domain.Enums.AccountType.None,
                     CreatedAt = DateTime.UtcNow,
                     Email = request.Email,
-                    Password = request.Password,
+                    Password = hasspassword,
                 };
 
                 var user = new UserCollection()

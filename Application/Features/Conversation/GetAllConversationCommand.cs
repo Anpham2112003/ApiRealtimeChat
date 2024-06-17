@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.ResponeModel.BsonConvert;
 using Domain.Ultils;
 using Infrastructure.Unit0fWork;
@@ -14,13 +15,13 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Conversation
 {
-    public class GetAllConversationCommand:IRequest<Result<List<ConversationConvert>>>
+    public class GetAllConversationCommand:IRequest<Result<PagingRespone<List<ConversationConvert>>>>
     {
         public int skip {  get; set; }
         public int limit { get; set; }  
     }
 
-    public class HandGetAllConversation : IRequestHandler<GetAllConversationCommand, Result<List<ConversationConvert>>>
+    public class HandGetAllConversation : IRequestHandler<GetAllConversationCommand, Result<PagingRespone<List<ConversationConvert>>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -31,7 +32,7 @@ namespace Application.Features.Conversation
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<List<ConversationConvert>>> Handle(GetAllConversationCommand request, CancellationToken cancellationToken)
+        public async Task<Result<PagingRespone<List<ConversationConvert>>>> Handle(GetAllConversationCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -39,9 +40,16 @@ namespace Application.Features.Conversation
 
                 var result = await _unitOfWork.conversationRepository.GetAllConversationAsync(UserId, request.skip, request.limit);
 
-                if (!result.Any()) return Result<List<ConversationConvert>>.Failuer(ConversationError.NotFound);
+                if (!result.Any()) return Result<PagingRespone<List<ConversationConvert>>>.Failuer(ConversationError.NotFound);
 
-                return Result<List<ConversationConvert>>.Success(result);
+                var page = new PagingRespone<List<ConversationConvert>>
+                {
+                    Data = result,
+                    Index = request.skip,
+                    Limit = request.limit,
+                };
+
+                return Result<PagingRespone<List<ConversationConvert>>>.Success(page);
             }
             catch (Exception)
             {

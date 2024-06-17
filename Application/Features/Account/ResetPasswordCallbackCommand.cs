@@ -38,28 +38,20 @@ namespace Application.Features.Account
         {
             try
             {
-                if (string.IsNullOrEmpty(request.token) 
-
-                || !JwtLibrary.ValidateToken(request.token, _configuration["Jwt:ResetPasswordKey"]!))
+                if (string.IsNullOrEmpty(request.token) || !JwtLibrary.TryValidateToken(request.token, _configuration["Jwt:ResetPasswordKey"]! , out var Claims))
 
                     return Result<string>.Failuer(AccountError.TokenNotValid(request.token!));
 
-                var Claims = JwtLibrary.GetClaimsPrincipalFromToken(request.token, _configuration["Jwt:ResetPasswordKey"]!);
 
                 var email = Claims.FindFirstValue(ClaimTypes.Email);
 
-                var account = await _unitOfWork.accountRepository.FindAccountByEmail(email);
+                var newPassword = DateTime.UtcNow.ToString("yyyy’-‘MM’-‘dd’T’HH’:’mm’:’ss.fffffffK");
 
-                if (account == null) return Result<string>.Failuer(AccountError.EmailNotFound(email));
-
-                var newPassword = DateTime.UtcNow.ToString();
                 var hashPassword = HashLibrary.GenerateHash(newPassword);
-                var filter = Builders<AccountCollection>.Filter.Eq(x => x.Email, email);
+               
 
-                var update = Builders<AccountCollection>.Update.Set(x => x.Password, hashPassword);
-
-                await _unitOfWork.accountRepository.UpdateAsync(filter, update);
-
+                await _unitOfWork.accountRepository.UpdatePassword(email, hashPassword);
+                
                 var mailConten = new MailContent
                 {
                     To = email,

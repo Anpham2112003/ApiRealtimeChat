@@ -46,6 +46,22 @@ namespace ApiRealtimeChat.Controllers
             return Unauthorized(result.Error);
         }
 
+        [HttpPost("auth/signout")]
+        public async Task<IActionResult> Logout(LogoutAccountCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok(result.Data) : Unauthorized();
+        }
+
+        [HttpPost("auth/refreshtoken")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenCommmand commmand)
+        {
+            var result = await _mediator.Send(commmand);
+
+           return result.IsSuccess?Ok(result.Data): Unauthorized();
+        }
+
         [HttpPost("auth/resetpassword")]
         public async Task<IActionResult> ResetPassword(ResetPasswordCommand command)
         {
@@ -103,7 +119,7 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess?Ok():BadRequest(result.Error);
         }
 
-        [HttpDelete("auth/remove")]
+        [HttpDelete("auth/delete/account")]
         public async Task<IActionResult> RemoveAccount(RemoveAccountCommand command)
         {
             var result = await _mediator.Send(command);

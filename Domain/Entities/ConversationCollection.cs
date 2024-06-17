@@ -20,7 +20,7 @@ namespace Domain.Entities
         public string? Id { get; set; }
         public List<ObjectId>? Owners { get; set; }
         public List<Message>? Messages { get; set; }
-        public List<PindMessage>? MessagePinds { get; set; }
+        public List<ObjectId>? MessagePinds { get; set; }
         public bool IsGroup {  get; set; }
 
         [BsonIgnoreIfNull]

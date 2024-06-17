@@ -17,16 +17,32 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("user/profile/{id}")]
-        public async Task<IActionResult> GetInforUser(string id)
+        [HttpGet("user/search")]
+        public async Task<IActionResult> SearchUser([FromQuery]string name)
         {
-            var result  = await _mediator.Send(new GetInforUserCommand(id));
+            var result = await _mediator.Send(new SearchUserCommand(name));
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound();
+        }
+
+        [HttpGet("user/profile")]
+        public async Task<IActionResult> GetMyProfile()
+        {
+            var result  = await _mediator.Send(new GetMyProfileCommand());
 
             return result.IsFailuer ? NotFound(result.Error) : Ok(result.Data);
         }
 
+        [HttpGet("user/profile/{id}")]
+        public async Task<IActionResult> ViewProfile(string id)
+        {
+            var result = await _mediator.Send(new ViewProfileUserCommand(id));
+
+            return result.IsSuccess?Ok(result.Data): NotFound();
+        }
+
         [HttpPut("user/profile/edit")]
-        public async Task<IActionResult> UpdateInforUser(UpdateInforUserCommand command)
+        public async Task<IActionResult> UpdateProfile(UpdateInforUserCommand command)
         {
             var result = await _mediator.Send(command);
 

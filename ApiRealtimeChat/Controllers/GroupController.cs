@@ -16,6 +16,19 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
+        [HttpGet("{id}/members")]
+        public async Task<IActionResult> GetMemberInGroup(string id,[FromQuery]int skip,int limit)
+        {
+            var result = await _mediator.Send(new GetMemberInGroupCommand
+            {
+                Id = id,
+                Skip = skip,
+                Limit = limit
+            });
+
+            return result.IsSuccess ? Ok(result) : NotFound();
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateGroup(CreateGroupCommand command)
         {

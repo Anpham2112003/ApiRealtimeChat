@@ -18,8 +18,15 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
+        [HttpGet("friend/search")]
+        public async Task<IActionResult> Search([FromQuery]string name)
+        {
+            var result = await _mediator.Send(new SearchFriendCommand { Name = name });
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound();
+        }
         [HttpPost("friend/accept")]
-        public async Task<IActionResult> AddFriend(AddFriendCommand command)
+        public async Task<IActionResult> AddFriend(AcceptFriendCommand command)
         {
             var result = await _mediator.Send(command);
 
@@ -27,8 +34,8 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [Authorize]
-        [HttpPost("friend/waitlist/add")]
-        public async Task<IActionResult> AddToWaitList(AddToWaitListCommand command)
+        [HttpPost("friend/invite")]
+        public async Task<IActionResult> AddToWaitList(SendInviteFriendCommand command)
         {
             var result =  await _mediator.Send(command);
 
@@ -36,7 +43,7 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [Authorize]
-        [HttpGet("friend/waitlist")]
+        [HttpGet("friend/invites")]
         public async Task<IActionResult> GetFromWaiList([FromQuery]GetInforFriendFromWaitListCommand command)
         {
             var result = await _mediator.Send(command);
@@ -45,15 +52,15 @@ namespace ApiRealtimeChat.Controllers
         }
         
 
-        [HttpGet("friends/{id}")]
-        public async Task<IActionResult> GetFriend(string id, [FromQuery] int skip, int limit)
+        [HttpGet("friends")]
+        public async Task<IActionResult> GetFriend([FromQuery] int skip, int limit)
         {
-            var result = await _mediator.Send(new GetFriendCommand(id, skip, limit));
+            var result = await _mediator.Send(new GetFriendCommand( skip, limit));
 
             return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
         }
 
-        [HttpDelete("friend/cancel/{id}")]
+        [HttpDelete("friend/cancelfriend/{id}")]
         public async Task<IActionResult> CancelFriendRequset(string id)
         {
             var result = await _mediator.Send(new CancelFriendRequestCommand { Id = id });
@@ -68,10 +75,10 @@ namespace ApiRealtimeChat.Controllers
 
             return result.IsSuccess?Ok(result.Data) : BadRequest(result.Error);
         }
-        [HttpDelete("friend/waitlist/delete/{id}")]
-        public async Task<IActionResult> RejectFriend(string id)
+        [HttpDelete("friend/invite/delete/{id}")]
+        public async Task<IActionResult> RefuseFriendRequest(string id)
         {
-            var result = await _mediator.Send(new RejectFriendWaitListCommand(id));
+            var result = await _mediator.Send(new RefuseFriendRequestsCommand(id));
 
             return result.IsSuccess?Ok(result.Data): BadRequest(result.Error);  
         }

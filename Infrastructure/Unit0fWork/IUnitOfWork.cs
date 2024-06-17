@@ -22,7 +22,7 @@ namespace Infrastructure.Unit0fWork
         
         public IConversationRepository conversationRepository { get; }
         public IMessageRepository messageRepository { get; }
-       
+        public INotificationRepository notificationRepository {  get; } 
      
     }
 }

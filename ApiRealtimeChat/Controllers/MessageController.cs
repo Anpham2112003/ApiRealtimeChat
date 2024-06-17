@@ -24,13 +24,34 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
         }
 
+        [HttpGet("messages/pinds/{id}")]
+        public async Task<IActionResult> GetMessagePind(string id,[FromQuery] int skip,int limit)
+        {
+            var result = await _mediator.Send(new GetMessagesPindCommand
+            {
+                ConversationId = id,
+                Limit = limit,
+                Skip = skip
+            });
 
-        [HttpPost("message/send")]
-        public async Task<IActionResult> GetConversationSingleChat([FromForm]SendMessageCommand command)
+            return result.IsSuccess?Ok(result.Data) : NotFound();
+        }
+
+
+        [HttpPost("send/message")]
+        public async Task<IActionResult>SendMessage(SendMessageCommand command)
         {
             var result =await _mediator.Send(command);
 
-            return result.IsSuccess ? Ok(result.Data) : BadRequest(result);
+            return result.IsSuccess ? Ok(result.Data) : BadRequest();
+        }
+
+        [HttpPost("send/file")]
+        public async Task<IActionResult> SendFile([FromForm] SendFileCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok(result.Data) : BadRequest();
         }
 
         [HttpPut("message/pind")]

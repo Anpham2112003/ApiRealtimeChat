@@ -1,5 +1,6 @@
 ﻿
 using Domain.Entities;
+using Domain.ResponeModel.BsonConvert;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Org.BouncyCastle.Crypto;
@@ -21,6 +22,8 @@ namespace Infrastructure.Repository.BaseRepository
         public Task KickMemberInGroup(string Id, string MemberId);
         public Task<List<string>> DeleteGroupAsync(string Id);
         public Task<UpdateResult> LeaveGroup(string Id, string UserId);
+
+        public  Task<List<MembersGroupConvert>> GetMembersInGroup(string ConversationId, int skip, int limit);
 
 
 

@@ -2,11 +2,13 @@
 using Domain.Enums;
 using Domain.Errors;
 using Domain.Ultils;
+using Infrastructure.Services;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
@@ -21,20 +23,21 @@ namespace Application.Features.Message
     public class SendMessageCommand:IRequest<Result<string>>
     {
         public string? Id {  get; set; }
-        public MessageType Type { get; set; }
         public string? Content {  get; set; }
-        public IFormFile? File { get; set; }
+        
     }
     public class HandSendMessageCommand : IRequestHandler<SendMessageCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IHubContext<HubService,IHubServices> _hub;
+       
         public HandSendMessageCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor, IHubContext<HubService, IHubServices> hub)
         {
             _unitOfWork = unitOfWork;
             _contextAccessor = contextAccessor;
             _hub = hub;
+           
         }
 
         public async Task<Result<string>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
@@ -42,25 +45,38 @@ namespace Application.Features.Message
             try
             {
 
-                var User = _contextAccessor.HttpContext!.User.GetUserFromToken();
+                    var User = _contextAccessor.HttpContext!.User.GetUserFromToken();
 
-                var message = new Domain.Entities.Message
+
+                    var message = new Domain.Entities.Message
+                    {
+                        Id = ObjectId.GenerateNewId().ToString(),
+                        AccountId = User.AccountId,
+                        Content = request.Content,
+                        MessageType = MessageType.Message,
+                        CreatedAt = DateTime.UtcNow,
+                    };
+
+                    var result = await _unitOfWork.messageRepository.SendMessageAsync(request.Id!, User.AccountId!, message);
+
+                    if (result.ModifiedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
+
+                var messageReceiver = new ClientMessageReceiver
                 {
-                    Id = ObjectId.GenerateNewId().ToString(),
-                    AccountId = User.AccountId,
-                    Content = request.Content,
-                    MessageType = MessageType.Message,
+                    Id = message.Id,
+                    AccountId = message.AccountId,
+                    Content = message.Content,
                     CreatedAt = DateTime.UtcNow,
-                    User=User,
+                    IsDelete = false,
+                    MessageType = MessageType.Message,
+                    User = User
+
                 };
+
+                    await _hub.Clients.Group(request.Id!).ReceiveMessage(request.Id!, messageReceiver);
+
+                    return Result<string>.Success("Ok");
                 
-                var result = await _unitOfWork.messageRepository.SendMessageAsync(request.Id!, User.AccountId!, message);
-
-                await _hub.Clients.Groups(request.Id!).ReceiveMessage(request.Id!, message);
-
-                if (result.ModifiedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
-
-                return Result<string>.Success("Ok");
             }
             catch (Exception)
             {

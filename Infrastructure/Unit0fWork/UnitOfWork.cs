@@ -62,6 +62,12 @@ namespace Infrastructure.Unit0fWork
 
         private IMessageRepository? _messageRepository;
 
+        public INotificationRepository notificationRepository
+
+            => _notificationRepository ??= new NotificationRepository(_mongoDB);
+
+        private INotificationRepository _notificationRepository;
+
 
         public async Task<IClientSessionHandle> TransactionAsync()
         {

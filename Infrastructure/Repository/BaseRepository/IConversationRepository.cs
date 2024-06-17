@@ -17,6 +17,7 @@ namespace Infrastructure.Repository.BaseRepository
         public Task<List<ConversationConvert>> GetAllConversationAsync(string UserId, int skip, int limit);
         public Task<ConversationCollection?> GetInforConversation(string UserId, string ConversationId);
         public  Task<DeleteResult> RemoveConversation(string ConversationId);
-
+        public  Task<ConversationConvert> GetConversationByIdAsync(string ConversationId, string UserId);
+        public  Task<IEnumerable<string?>> GetConversationId(string id);
     }
 }

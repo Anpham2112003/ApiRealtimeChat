@@ -23,6 +23,7 @@ namespace Application.Features.Group
     {
         private readonly IHttpContextAccessor _context;
         private readonly IUnitOfWork _unitOfWork;
+        
 
         public HandCreateGroupCommand(IHttpContextAccessor context, IUnitOfWork unitOfWork)
         {
@@ -42,7 +43,7 @@ namespace Application.Features.Group
                     Owners = new List<ObjectId> { ObjectId.Parse(UserId) },
                     IsGroup = true,
                     Messages = new List<Domain.Entities.Message>(),
-                    MessagePinds = new List<PindMessage>(),
+                    MessagePinds = new List<ObjectId>(),
                     Seen = DateTime.UtcNow,
                     CreatedAt=DateTime.UtcNow,
                     Group = new Domain.Entities.Group
@@ -57,6 +58,8 @@ namespace Application.Features.Group
                         UpdatedAt=DateTime.UtcNow,
                     }
                 };
+
+               
 
                 await _unitOfWork.groupRepository.CreateGroupAsync(group);
 

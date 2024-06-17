@@ -12,7 +12,7 @@ namespace Infrastructure.Services.HubServices
         
         public Task ReceiveMessage( string conversationId,object message);
 
-        public Task Notification(string method,object message);
+        public Task Notification(object message);
 
 
     }

@@ -1,14 +1,19 @@
-﻿using Domain.Entities;
-using Domain.ResponeModel.BsonConvert;
+﻿using Amazon.S3.Model;
+using Domain.Entities;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.Xml;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Repository
@@ -19,6 +24,7 @@ namespace Infrastructure.Repository
         public FriendRepository(IMongoDB mongoDB) : base(mongoDB)
         {
             base._collection = mongoDB.GetCollection<FriendCollection>(nameof(FriendCollection));
+            _userCollection=mongoDB.GetCollection<UserCollection>(nameof(UserCollection));
 
             var AccountIdIndex = Builders<FriendCollection>.IndexKeys.Ascending(x => x.AccountId);
             
@@ -30,7 +36,7 @@ namespace Infrastructure.Repository
             var fillter = Builders<FriendCollection>
                 .Filter.And(
                     Builders<FriendCollection>.Filter.Eq(x => x.AccountId, AccountId),
-                    Builders<FriendCollection>.Filter.Ne("Friends._id", ObjectId.Parse(FriendId))
+                    Builders<FriendCollection>.Filter.Nin("Friends._id", new[] { ObjectId.Parse(FriendId) })
                 );
 
             var update = Builders<FriendCollection>
@@ -42,13 +48,16 @@ namespace Infrastructure.Repository
 
         public async Task AcceptFriend(string myId, string WaitListId)
         {
-            var filter = Builders<FriendCollection>.Filter.Eq(x => x.AccountId, myId);
+            var filter = Builders<FriendCollection>.Filter.And(
+                   Builders<FriendCollection>.Filter.Eq(x => x.AccountId, myId),
+                   Builders<FriendCollection>.Filter.Nin("Friends._id", new[] {ObjectId.Parse(WaitListId)})
+                   );
 
             var update = Builders<FriendCollection>
 
                 .Update
                 .Pull(x => x.WaitingList, ObjectId.Parse(WaitListId))
-                .AddToSet(x => x.Friends, new Friend(WaitListId));
+                .Push(x => x.Friends, new Friend(WaitListId));
 
             await _collection!.UpdateOneAsync(filter, update,new UpdateOptions { IsUpsert=true});
         }
@@ -67,7 +76,7 @@ namespace Infrastructure.Repository
             return result;
         }
 
-        public async Task<GetFriendsByAccountConvert?> GetFriendAysnc(string AccountId, int skip, int limit)
+        public async Task<List<UserConvert>> GetFriendAysnc(string AccountId, int skip, int limit)
         {
 
             var result = await _collection.Aggregate()
@@ -93,35 +102,58 @@ namespace Infrastructure.Repository
                     }
                 }
             })
-            .Lookup(nameof(UserCollection), "limitLookup._id", "AccountId", "Result")
             .AppendStage<BsonDocument>(new BsonDocument
             {
                 {
-                    "$unset", new BsonArray
+                    "$lookup", new BsonDocument
                     {
-                        "Result._id",
-                        "Result.FistName",
-                        "Result.LastName",
-                        "Result.UpdatedAt"
+                        {
+                            "from",nameof(UserCollection)
+                        },
+                        {
+                            "localField","Friends._id"
+                        },
+                        {
+                            "foreignField","AccountId"
+                        },
+                        {
+                            "pipeline", new BsonArray
+                            {
+                                new BsonDocument
+                                {
+                                    {
+                                        "$project", new BsonDocument
+                                        {
+                                            {
+                                                "_id",0
+                                            },
+                                            {
+                                                "AccountId",1
+                                            },
+                                            {
+                                                "FullName",1
+                                            },
+                                            {
+                                                "Avatar",1
+                                            },
+                                            {
+                                                "Gender",1
+                                            },
+                                            {
+                                                "State",1
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "as","Users"
+                        }
                     }
                 }
-            })
-
-            .Project(new BsonDocument
-            {
-                {"_id",0 },
-
-                {
-
-                    "Result",1
-                }
-
-
-
-            }).As<GetFriendsByAccountConvert>()
-
-            .FirstOrDefaultAsync();
-            Debug.WriteLine(result);
+            }).Unwind("Users")
+            .ReplaceRoot<BsonDocument>("$Users").As<UserConvert>().ToListAsync();
 
 
             return result;
@@ -130,8 +162,8 @@ namespace Infrastructure.Repository
 
         }
 
-        public async Task<GetInfoWaitAccecptConvert?> GetInfoFromWatiList(string AccountId, int skip, int limit)
-        { 
+        public async Task<List<FriendWaitListResponeModel>> GetInfoFromWatiList(string AccountId, int skip, int limit)
+        {
             var result = await _collection.Aggregate()
             .Match(x => x.AccountId == AccountId)
             .AppendStage<BsonDocument>(new BsonDocument
@@ -145,7 +177,7 @@ namespace Infrastructure.Repository
                                 {
                                     "$slice", new BsonArray
                                     {
-                                        "$Waitlist",
+                                        "$WaitingList",
                                         skip,
                                         limit
                                     }
@@ -155,41 +187,68 @@ namespace Infrastructure.Repository
                     }
                 }
             })
-            .Lookup(nameof(UserCollection), "limitLookup._id", "AccountId", "Result")
             .AppendStage<BsonDocument>(new BsonDocument
             {
                 {
-                    "$unset", new BsonArray
+                    "$lookup", new BsonDocument
                     {
-                        "Result._id",
-                        "Result.FistName",
-                        "Result.LastName",
-                        "Result.UpdatedAt"
+                        {
+                            "from",nameof(UserCollection)
+                        },
+                        {
+                            "localField","limitLookup"
+                        },
+                        {
+                            "foreignField","AccountId"
+                        },
+                        {
+                            "pipeline", new BsonArray
+                            {
+                                new BsonDocument
+                                {
+                                    {
+                                        "$project", new BsonDocument
+                                        {
+                                            {
+                                                "_id",0
+                                            },
+                                            {
+                                                "AccountId",1
+                                            },
+                                            {
+                                                "FullName",1
+                                            },
+                                            {
+                                                "Avatar",1
+                                            },
+                                            {
+                                                "State",1
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "as","Users"
+                        }
                     }
                 }
             })
-
-            .Project(new BsonDocument
-            {
-                { "_id", 0 },
-
-                {
-
-                    "Result", 1
-                }
+            .Unwind("Users")
+            .ReplaceRoot<BsonDocument>("$Users")
+            .As<FriendWaitListResponeModel>()
+            .ToListAsync();
 
 
-
-            }).As<GetInfoWaitAccecptConvert>().FirstOrDefaultAsync();
-
-            return result;
+            return result ;
         }
 
-        public async Task AddToWaitlistAsync(string AccountId, string  WaitListId)
+        public async Task AddToWaitlistAsync(string AccountId, string  MyId)
         {
             var filter = Builders<FriendCollection>.Filter.Eq(x=>x.AccountId,AccountId);
 
-            var update = Builders<FriendCollection>.Update.Push(x => x.WaitingList, ObjectId.Parse(WaitListId));
+            var update = Builders<FriendCollection>.Update.AddToSet(x => x.WaitingList, ObjectId.Parse(MyId)); 
 
             await _collection!.UpdateOneAsync(filter, update,new UpdateOptions() { IsUpsert=true});
         }
@@ -202,6 +261,105 @@ namespace Infrastructure.Repository
             var update = Builders<FriendCollection>.Update.Pull(x=>x.WaitingList, ObjectId.Parse(MyId));
 
             return await _collection!.UpdateOneAsync(filter, update);
+        }
+
+        public async Task<List<SearchFriendResponeModel>> FriendSearchAsync(string name, string Id)
+        {
+
+
+            var aggry = await _collection.Aggregate()
+                .Match(x => x.AccountId == Id)
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField", "Friends._id"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+
+                            {
+                                "pipeline",new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$match", new BsonDocument
+                                            {
+                                                {
+                                                    "FullName", new BsonDocument
+                                                    {
+                                                        {
+                                                            "$regex",new Regex($"^{name}")
+                                                        },
+                                                        {
+                                                            "$options","i"
+                                                        }
+
+                                                    }
+                                                }
+
+                                            }
+                                        }
+                                    },
+                                    new BsonDocument
+                                    {
+
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Gender",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Users"
+                            }
+                        }
+                    }
+                }).Unwind("Users").ReplaceRoot<BsonDocument>("$Users").As<SearchFriendResponeModel>().ToListAsync();
+
+
+            Debug.WriteLine(aggry);
+
+
+            return aggry;
+        }
+
+        public async Task<UpdateResult> RejectFriendRequest(string AccountId, string RejectId)
+        {
+            var filter = Builders<FriendCollection>
+                    .Filter
+                    .Eq(x => x.AccountId, AccountId);
+
+            var update = Builders<FriendCollection>
+            .Update
+                .Pull(x => x.WaitingList, ObjectId.Parse(RejectId));
+
+            return await _collection!.UpdateOneAsync(filter, update);
+
         }
     }
 }

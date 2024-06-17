@@ -15,17 +15,17 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Friend
 {
-    public class RejectFriendWaitListCommand:IRequest<Result<string>>
+    public class RefuseFriendRequestsCommand:IRequest<Result<string>>
     {
-        public string? RejectId {  get; set; }
+        public string? Id {  get; set; }
 
-        public RejectFriendWaitListCommand(string? rejectId)
+        public RefuseFriendRequestsCommand(string? rejectId)
         {
-            RejectId = rejectId;
+            Id = rejectId;
         }
     }
 
-    public class HandRejectFriendWaitListCommand : IRequestHandler<RejectFriendWaitListCommand, Result<string>>
+    public class HandRejectFriendWaitListCommand : IRequestHandler<RefuseFriendRequestsCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _httpContext;
@@ -36,21 +36,13 @@ namespace Application.Features.Friend
             _httpContext = httpContext;
         }
 
-        public async Task<Result<string>> Handle(RejectFriendWaitListCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(RefuseFriendRequestsCommand request, CancellationToken cancellationToken)
         {
             try
             {
                 var accountId = _httpContext.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
-
-                var filter = Builders<FriendCollection>
-                    .Filter
-                    .Eq(x => x.AccountId, accountId);
-
-                var update = Builders<FriendCollection>
-                    .Update
-                    .Pull(x => x.WaitingList, ObjectId.Parse(request.RejectId));
-
-                var result = await _unitOfWork.friendRepository.UpdateAsync(filter, update);
+                
+                var result = await _unitOfWork.friendRepository.RejectFriendRequest(accountId,request.Id!);
 
                 if (result.ModifiedCount == 0) return Result<string>.Failuer(FriendError.DocumentNotFound);
 
