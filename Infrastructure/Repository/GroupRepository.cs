@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 using Domain.ResponeModel.BsonConvert;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
@@ -48,12 +49,13 @@ namespace Infrastructure.Repository
             var filter = Builders<ConversationCollection>
                 .Filter.And(
                     Builders<ConversationCollection>.Filter.Eq(x => x.Id, GroupId),
-                    Builders<ConversationCollection>.Filter.Eq("Onwers", MyId),
+                    Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(MyId)),
                     Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, true)
                 );
 
             var update = Builders<ConversationCollection>
                 .Update
+                .Inc(x=>x.Group!.TotalMember,ObjIds.Count())
                 .AddToSetEach(x=>x.Owners,ObjIds)
                 .PushEach(x => x.Group!.Members, members);
 
@@ -96,6 +98,7 @@ namespace Infrastructure.Repository
 
             var update = Builders<ConversationCollection>
                 .Update
+                .Inc(x=>x.Group!.TotalMember,-1)
                 .Pull(x=>x.Owners,ObjectId.Parse(MemberId))
                 .PullFilter(x => x.Group!.Members, Builders<Member>.Filter.Eq(x => x.Id, MemberId));
 
@@ -121,19 +124,22 @@ namespace Infrastructure.Repository
             var filter = Builders<ConversationCollection>.Filter
                 .And(
                     Builders<ConversationCollection>.Filter.Eq(x => x.Id, Id),
-                    Builders<ConversationCollection>.Filter.ElemMatch(x => x.Messages, UserId)
+                    Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(UserId))
                 );
 
             var update = Builders<ConversationCollection>.Update
-                .Pull(x=>x.Owners,ObjectId.Parse(UserId))
-                .PullFilter(x=>x.Group!.Members,Builders<Member>.Filter.Eq(x=>x.Id, UserId));
+                .Pull(x => x.Owners, ObjectId.Parse(UserId))
+                .PullFilter(x => x.Group!.Members, Builders<Member>.Filter.Eq(x => x.Id, UserId))
+                .Inc(x => x.Group!.TotalMember, -1);
+                
+
 
             return await _collection!.UpdateOneAsync(filter,update);
         }
 
-        public async Task<List<MembersGroupConvert>> GetMembersInGroup(string ConversationId, int skip,int limit)
+        public async Task<List<MembersGroupConvert>> GetMembersInGroup(string ConversationId, int skip, int limit)
         {
-            var aggry =await _collection.Aggregate()
+            var aggry = await _collection.Aggregate()
                 .Match(x => x.Id == ConversationId && x.IsGroup == true)
                 .AppendStage<BsonDocument>(new BsonDocument
                 {
@@ -236,9 +242,9 @@ namespace Infrastructure.Repository
                                                                     {
                                                                         "$indexOfArray", new BsonArray
                                                                         {
-                                                                           
+
                                                                                 "$Result.AccountId","$$item._id"
-                                                                            
+
                                                                         }
                                                                     }
                                                                 }
@@ -257,7 +263,33 @@ namespace Infrastructure.Repository
 
             Debug.WriteLine(aggry);
 
+            if (aggry is null ) return new List<MembersGroupConvert>();
+
             return aggry.Members!;
+        }
+
+        public async Task<UpdateResult> UpdateRole(string GroupId, string MemberId, GroupRoles role)
+        {
+            var filter = Builders<ConversationCollection>.Filter.And(
+                    Builders<ConversationCollection>.Filter.Eq(x => x.Id, GroupId),
+                    Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, true)
+             );
+
+            var update = Builders<ConversationCollection>.Update.Set("Group.Members.$[m].Role", role);
+
+            var arrayFilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                       
+                            "m._id",ObjectId.Parse(MemberId)
+                        
+                    }
+                })
+            };
+
+            return await _collection!.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilter });
         }
     }
 }

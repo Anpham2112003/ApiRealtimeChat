@@ -1,12 +1,14 @@
 ﻿using Application.Features.Message;
 using Domain.Entities;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiRealtimeChat.Controllers
 {
     [ApiController]
     [Route("api")]
+    [Authorize]
     public class MessageController:ControllerBase
     {
         private readonly IMediator _mediator;
@@ -71,7 +73,7 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [HttpPut("message/update")]
-        public async Task<IActionResult> ChnageMessage(ChangeContentMessageCommand command)
+        public async Task<IActionResult> ChangeMessage(ChangeContentMessageCommand command)
         {
             var result = await _mediator.Send(command);
 

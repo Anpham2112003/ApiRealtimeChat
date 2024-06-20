@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 namespace Infrastructure.Services.HubServices
 {
 
-    
+    [Authorize]
     public class HubService : Hub<IHubServices>
     {
 
@@ -63,6 +63,8 @@ namespace Infrastructure.Services.HubServices
                 var check = await _unitOfWork.conversationRepository.GetInforConversation(UserId, id);
 
                 if (check is null) Context.Abort();
+
+                await Groups.AddToGroupAsync(Context.ConnectionId,id);
             }
             catch (Exception)
             {
@@ -77,12 +79,19 @@ namespace Infrastructure.Services.HubServices
             try
             {
                 await Groups.AddToGroupAsync( Context.ConnectionId,id);
+                
             }
             catch (Exception)
             {
 
                 throw;
             }
+        }
+
+        public async Task LeaveGroup(string id)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, id);
+           
         }
 
 
@@ -93,7 +102,7 @@ namespace Infrastructure.Services.HubServices
 
             await _unitOfWork.userRepository.ChangeStateUserAsync(UserId,Domain.Enums.UserState.Online);
 
-            await _redisService.SetHashValueToRedis(UserId, new HashEntry[] { new HashEntry("State", "1") });
+            await _redisService.SetHashValueToRedis(UserId, new HashEntry[] { new HashEntry("State", "0") });
 
             var ids = await _unitOfWork.conversationRepository.GetConversationId(UserId);
 
@@ -111,6 +120,8 @@ namespace Infrastructure.Services.HubServices
             var UserId = Context.User.FindFirstValue(ClaimTypes.PrimarySid);
 
             await _unitOfWork.userRepository.ChangeStateUserAsync(UserId,state:Domain.Enums.UserState.Offline);
+
+            await _redisService.SetHashValueToRedis(UserId, new HashEntry[] { new HashEntry("State", "1") });
 
             await base.OnDisconnectedAsync(exception);
         }

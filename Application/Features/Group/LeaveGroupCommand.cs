@@ -1,8 +1,11 @@
 ﻿using Domain.Errors;
 using Domain.Ultils;
+using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
+using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,23 +23,37 @@ namespace Application.Features.Group
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _accessor;
-        public HandLeavGroupCommand(IUnitOfWork unitOfWork, IHttpContextAccessor accessor)
+        private readonly IHubContext<HubService,IHubServices> _hubContext;
+        
+        public HandLeavGroupCommand(IUnitOfWork unitOfWork, IHttpContextAccessor accessor, IHubContext<HubService, IHubServices> hubContext)
         {
             _unitOfWork = unitOfWork;
             _accessor = accessor;
+            _hubContext = hubContext;
         }
 
         public async Task<Result<string>> Handle(LeaveGroupCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                var UserId = _accessor.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
+                var User = _accessor.HttpContext!.User.GetUserFromToken();
 
-                var result = await _unitOfWork.groupRepository.LeaveGroup(request.Id!, UserId);
+                var result = await _unitOfWork.groupRepository.LeaveGroup(request.Id!, User.AccountId!);
 
                 if (result.MatchedCount == 0) return Result<string>.Failuer(GroupError.GroupNotFound);
 
-                return Result<string>.Success(UserId);
+                var message = new Domain.Entities.Message
+                {
+                    Id=ObjectId.GenerateNewId().ToString(),
+                    Content = $"{User.Name} leaved group!",
+                    CreatedAt = DateTime.Now,
+                    MessageType=Domain.Enums.MessageType.Notification
+                    
+                };
+                
+                await _hubContext.Clients.Group(request.Id!).ReceiveMessage(request.Id!, message);
+
+                return Result<string>.Success("Success!");
             }
             catch (Exception)
             {

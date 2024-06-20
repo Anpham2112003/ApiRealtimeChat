@@ -18,6 +18,7 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
+        [Authorize]
         [HttpGet("friend/search")]
         public async Task<IActionResult> Search([FromQuery]string name)
         {
@@ -25,6 +26,18 @@ namespace ApiRealtimeChat.Controllers
 
             return result.IsSuccess ? Ok(result.Data) : NotFound();
         }
+
+        [Authorize]
+
+        [HttpGet("friends/group/{id}")]
+        public async Task<IActionResult> GetFriendNotInGroup(string id,[FromQuery] int skip,int limit)
+        {
+            var result = await _mediator.Send(new GetFriendNotInGroupCommand(id, skip, limit));
+
+            return result.IsSuccess?Ok(result.Data) : NotFound();
+        }
+
+        [Authorize]
         [HttpPost("friend/accept")]
         public async Task<IActionResult> AddFriend(AcceptFriendCommand command)
         {
@@ -44,13 +57,14 @@ namespace ApiRealtimeChat.Controllers
 
         [Authorize]
         [HttpGet("friend/invites")]
-        public async Task<IActionResult> GetFromWaiList([FromQuery]GetInforFriendFromWaitListCommand command)
+        public async Task<IActionResult> GetFromWaiList([FromQuery]GetWaitListCommand command)
         {
             var result = await _mediator.Send(command);
 
             return result.Data is null?NotFound():Ok(result.Data);
         }
-        
+
+        [Authorize]
 
         [HttpGet("friends")]
         public async Task<IActionResult> GetFriend([FromQuery] int skip, int limit)
@@ -60,13 +74,17 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
         }
 
-        [HttpDelete("friend/cancelfriend/{id}")]
+        [Authorize]
+
+        [HttpDelete("friend/cancelrequest/{id}")]
         public async Task<IActionResult> CancelFriendRequset(string id)
         {
             var result = await _mediator.Send(new CancelFriendRequestCommand { Id = id });
 
             return result.IsSuccess?Ok(result?.Data) : NotFound(result.Error);
         }
+
+        [Authorize]
 
         [HttpDelete("friend/delete/{id}")]
         public async Task<IActionResult> RemoveFriend(string id)
@@ -75,6 +93,8 @@ namespace ApiRealtimeChat.Controllers
 
             return result.IsSuccess?Ok(result.Data) : BadRequest(result.Error);
         }
+
+        [Authorize]
         [HttpDelete("friend/invite/delete/{id}")]
         public async Task<IActionResult> RefuseFriendRequest(string id)
         {

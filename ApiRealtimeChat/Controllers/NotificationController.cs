@@ -1,11 +1,13 @@
 ﻿using Application.Features.Notification;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiRealtimeChat.Controllers
 {
     [ApiController]
     [Route("api")]
+    [Authorize]
     public class NotificationController:ControllerBase
     {
         private readonly IMediator _mediator;

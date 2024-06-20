@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Security.Claims;
@@ -20,6 +21,8 @@ namespace ApiRealtimeChat.Controllers
         {
             _mediator = mediator;
         }
+
+        [Authorize]
 
         [HttpPost("auth/signup")]
         public async Task<IActionResult> CreateAccount(CreateAccountCommand command)

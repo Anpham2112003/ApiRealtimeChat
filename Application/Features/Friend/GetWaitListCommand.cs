@@ -14,14 +14,14 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Friend
 {
-    public class GetInforFriendFromWaitListCommand:IRequest<Result<PagingRespone<List<FriendWaitListResponeModel>>>>
+    public class GetWaitListCommand:IRequest<Result<PagingRespone<List<FriendWaitListResponeModel>>>>
     {
         public int index {  get; set; }
         public int limit {  get; set; }
 
     }
 
-    public class HandGetInforFriendFromWaitListCommand : IRequestHandler<GetInforFriendFromWaitListCommand, Result<PagingRespone<List<FriendWaitListResponeModel>>>>
+    public class HandGetInforFriendFromWaitListCommand : IRequestHandler<GetWaitListCommand, Result<PagingRespone<List<FriendWaitListResponeModel>>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -32,7 +32,7 @@ namespace Application.Features.Friend
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<PagingRespone<List<FriendWaitListResponeModel>>>> Handle(GetInforFriendFromWaitListCommand request, CancellationToken cancellationToken)
+        public async Task<Result<PagingRespone<List<FriendWaitListResponeModel>>>> Handle(GetWaitListCommand request, CancellationToken cancellationToken)
         {
             try
             {

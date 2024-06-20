@@ -256,7 +256,7 @@ namespace Infrastructure.Repository
         public async Task<UpdateResult> CancelFriendResquestAsync(string MyId, string CancelId)
         {
             var filter = Builders<FriendCollection>.Filter
-                .Where(x=>x.Id==CancelId&&x.WaitingList.Any(x=>x.Equals(ObjectId.Parse(MyId))));
+                .Where(x=>x.AccountId==CancelId&&x.WaitingList.Any(x=>x.Equals(ObjectId.Parse(MyId))));
 
             var update = Builders<FriendCollection>.Update.Pull(x=>x.WaitingList, ObjectId.Parse(MyId));
 
@@ -339,7 +339,9 @@ namespace Infrastructure.Repository
                             }
                         }
                     }
-                }).Unwind("Users").ReplaceRoot<BsonDocument>("$Users").As<SearchFriendResponeModel>().ToListAsync();
+                })
+                
+                .Unwind("Users").ReplaceRoot<BsonDocument>("$Users").As<SearchFriendResponeModel>().ToListAsync();
 
 
             Debug.WriteLine(aggry);
@@ -360,6 +362,195 @@ namespace Infrastructure.Repository
 
             return await _collection!.UpdateOneAsync(filter, update);
 
+        }
+
+        public async Task<List<UserConvert>?> GetFriendNotInGroup(string MyId, string GroupId,int skip,int limit)
+        {
+            var aggry = await _collection.Aggregate()
+                .Match(x => x.AccountId == MyId)
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from",nameof(ConversationCollection)
+                            },
+
+                            {
+                                "pipeline", new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$match", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",ObjectId.Parse(GroupId)
+                                                }
+                                            }
+                                        }
+                                    },
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "Owners",1
+                                                }
+                                            }
+                                        }
+                                    },
+
+                                }
+                            },
+                            {
+                                "as","Members"
+                            }
+                        }
+                    }
+                }).AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$addFields", new BsonDocument
+                        {
+                            {
+                                "Member", new BsonDocument
+                                {
+                                    {
+                                        "$first","$Members"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }).
+                AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$addFields", new BsonDocument
+                        {
+                            {
+                                "idsUser", new BsonDocument
+                                {
+                                    {
+                                        "$filter", new BsonDocument
+                                        {
+                                            {
+                                                "input","$Friends"
+                                            },
+                                            {
+                                                "as","item"
+                                            },
+                                            {
+                                                "cond", new BsonDocument
+                                                {
+                                                    {
+                                                        "$cond", new BsonArray
+                                                        {
+                                                            new BsonDocument
+                                                            {
+                                                                {
+                                                                    "$in", new BsonArray
+                                                                    {
+                                                                        "$$item._id",
+                                                                        "$Member.Owners"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "$$REMOVE",
+                                                            "$$item"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }).AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from", nameof(UserCollection)
+                            },
+                            {
+                                "localField","idsUser._id"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline", new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$skip",skip
+                                        }
+                                    },
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$limit",limit
+                                        }
+                                    },
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "Gender",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Users"
+                            }
+                        }
+                    }
+                })
+                .Project(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "Users",1
+                    }
+                })
+            .Unwind("Users").ReplaceRoot<BsonDocument>("$Users").As<UserConvert>().ToListAsync();
+
+
+            Debug.WriteLine(aggry);
+            return aggry;
         }
     }
 }

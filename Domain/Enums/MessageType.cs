@@ -13,6 +13,8 @@ namespace Domain.Enums
         File,
         Git,
         Videocall,
-        PindMessage
+        PindMessage,
+        Notification,
+        UnPindMessage
     }
 }

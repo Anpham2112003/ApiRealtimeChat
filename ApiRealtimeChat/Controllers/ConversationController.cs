@@ -1,6 +1,7 @@
 ﻿using Application.Features.Conversation;
 using Application.Features.Message;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiRealtimeChat.Controllers
@@ -16,6 +17,7 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
+        [Authorize]
         [HttpGet("conversation/load/{id}")]
         public async Task<IActionResult>GetSingleConversation(string id)
         {
@@ -23,6 +25,8 @@ namespace ApiRealtimeChat.Controllers
 
             return Ok(result.Data);
         }
+
+        [Authorize]
         [HttpGet("conversation/{id}")]
         public async Task<IActionResult> GetConversationById(string id)
         {
@@ -31,6 +35,7 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess ? Ok(result.Data) : NotFound();
         }
 
+        [Authorize]
         [HttpGet("conversations")]
         public async Task<IActionResult> GetAllConversation([FromQuery]int skip,int limit)
         {
@@ -39,6 +44,7 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess?Ok(result.Data):NotFound(result.Error);
         }
 
+        [Authorize]
         [HttpDelete("conversation/delete/{id}")]
         public async Task<IActionResult> RemoveConversation(string id)
         {

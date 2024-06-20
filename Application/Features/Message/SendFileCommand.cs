@@ -21,6 +21,7 @@ namespace Application.Features.Message
     public class SendFileCommand:IRequest<Result<string>>
     {
         public string? Id {  get; set; }
+        public FileType Type { get; set; }
         public IFormFile? File { get; set; }
     }
 
@@ -59,7 +60,7 @@ namespace Application.Features.Message
                     Id = ObjectId.GenerateNewId().ToString(),
                     AccountId = user.AccountId,
                     Content = AwsPath,
-                    MessageType = Domain.Enums.MessageType.File,
+                    MessageType = (MessageType)request.Type,
                     CreatedAt = DateTime.UtcNow,
                     IsDelete = false,
                     

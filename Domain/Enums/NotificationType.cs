@@ -10,6 +10,8 @@ namespace Domain.Enums
     {
         Dev,
         InviteFriend,
-        NewConversation
+        AppcectFriend,
+        NewConversation,
+        ConversationDelete
     }
 }

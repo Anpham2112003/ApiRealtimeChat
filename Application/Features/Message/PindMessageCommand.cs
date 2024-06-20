@@ -45,20 +45,29 @@ namespace Application.Features.Message
                
                 var findMessage =await _unitOfWork.messageRepository.FindMessage(request.ConversationId!,request.MessageId!);
 
-                if (findMessage is null) return Result<string>.Failuer(new Error("Message", "Not found"));
+                if (findMessage is null 
+                    || findMessage.MessageType.Equals(MessageType.Notification) 
+                    || findMessage.MessageType.Equals(MessageType.Videocall) 
+                    || findMessage.MessageType.Equals(MessageType.UnPindMessage)
+                    || findMessage.MessageType.Equals(MessageType.Git)
+                    || findMessage.MessageType.Equals(MessageType.PindMessage))
+                    return Result<string>.Failuer(new Error("Fail", "Cannot Pind Message"));
 
-                var pindMessage = new PindMessage
+                var pindMessage = new ClientMessageReceiver
                 {
-                    AccountId = User.AccountId,
-                    By = User.Name,
-                    Content = findMessage.Content,
-                    Id = findMessage.Id,
-                    Type = findMessage.MessageType,
+                   AccountId= User.AccountId,
+                   Content = findMessage.Content,
+                   CreatedAt = DateTime.UtcNow,
+                   Id=request.MessageId,
+                   MessageType=MessageType.PindMessage,
+                   UpdatedAt= DateTime.UtcNow,
+                   User= User,
+            
                 };
-                var message = new Domain.Entities.Message
+                var notification = new Domain.Entities.Message
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
-                    MessageType = MessageType.PindMessage,
+                    MessageType = MessageType.Notification,
                     Content = $"{User.Name} pinned message!",
                     CreatedAt = DateTime.UtcNow,
                 };
@@ -67,9 +76,11 @@ namespace Application.Features.Message
 
                 if( result.MatchedCount==0) return Result<string>.Failuer(ConversationError.NotFound);
 
-                await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!, message);
+                await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!,notification);
 
-                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!,message);
+                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!,pindMessage);
+
+                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, notification);
 
                 return Result<string>.Success("Ok");
             }

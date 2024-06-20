@@ -39,7 +39,7 @@ namespace Application.Features.Group
             var User = await _unitOfWork.groupRepository
                 .GetMemberInGroup(request.Id!, _httpContext.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid)); 
 
-            if(User is null || User.Role.Equals(GroupRoles.Created)) return Result<string>.Failuer(GroupError.NotPermission);
+            if(User is null || !User.Role.Equals(GroupRoles.Created)) return Result<string>.Failuer(GroupError.NotPermission);
 
             var Ids = await _unitOfWork.groupRepository.DeleteGroupAsync(request.Id!);
 

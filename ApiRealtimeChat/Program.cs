@@ -19,6 +19,10 @@ using System.Diagnostics;
 using ApiRealtimeChat.Controllers;
 using Domain.Ultils;
 using Infrastructure.InjectServices;
+using Application.Validation;
+using FluentValidation;
+using Application.Validation.AccountValidation;
+using MediatR.NotificationPublishers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -139,10 +143,15 @@ builder.Services.AddSignalR(op =>
 builder.Services.AddMediatR(op =>
 {
     op.RegisterServicesFromAssembly(typeof(CreateAccountCommand).Assembly);
+    op.AddOpenBehavior(typeof(ValidationPipeline<,>));
+    
 });
 
+builder.Services.AddValidatorsFromAssembly(typeof(LoginValidation).Assembly);
 
 builder.Services.addInfrastructure(builder.Configuration);
+
+builder.Services.AddSingleton<ValidationExceptionHandlingMiddleware>();
 
 var app = builder.Build();
 
@@ -159,6 +168,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseMiddleware<ValidationExceptionHandlingMiddleware>();
 
 app.UseCors("Angular");
 

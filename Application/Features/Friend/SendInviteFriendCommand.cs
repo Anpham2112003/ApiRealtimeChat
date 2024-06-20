@@ -58,7 +58,6 @@ namespace Application.Features.Friend
                     Id = ObjectId.GenerateNewId().ToString(),
                     Content = $"{User.Name} Send a friend request to you!",
                     From = User.AccountId,
-                    To = request.Id,
                     CreatedAt = DateTime.UtcNow,
                     Type = NotificationType.InviteFriend,
                 };

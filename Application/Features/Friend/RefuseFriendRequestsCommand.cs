@@ -40,7 +40,7 @@ namespace Application.Features.Friend
         {
             try
             {
-                var accountId = _httpContext.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
+                var accountId = _httpContext.HttpContext!.User.GetIdFromClaim();
                 
                 var result = await _unitOfWork.friendRepository.RejectFriendRequest(accountId,request.Id!);
 

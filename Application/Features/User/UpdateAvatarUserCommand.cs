@@ -21,7 +21,6 @@ namespace Application.Features.User
 {
     public class UpdateAvatarUserCommand:IRequest<Result<UploadAvatarResponeModel>>
     {
-        public string? AccountId { get; set; }
         public IFormFile? Image {  get; set; }
     }
 
@@ -47,7 +46,7 @@ namespace Application.Features.User
 
                 StringBuilder key = new StringBuilder();
                 key.Append("avatar");
-                key.Append(request.AccountId);
+                key.Append(userId);
                 key.Append(request.Image!.Name);
                 key.Append(ObjectId.GenerateNewId());
                 key.Append(Path.GetExtension(request.Image!.FileName));
@@ -60,7 +59,7 @@ namespace Application.Features.User
 
               
                 return Result<UploadAvatarResponeModel>
-                    .Success(new UploadAvatarResponeModel("Upload success!", request.AccountId, awsUrl));
+                    .Success(new UploadAvatarResponeModel("Upload success!", userId, awsUrl));
             }
             catch (Exception e)
             {

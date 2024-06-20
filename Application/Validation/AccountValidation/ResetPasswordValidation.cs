@@ -6,21 +6,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Validation
+namespace Application.Validation.AccountValidation
 {
-    public class LoginValidation : AbstractValidator<LoginAccountCommand>
+    public class ResetPasswordValidation : AbstractValidator<ResetPasswordCommand>
     {
-        public LoginValidation()
+        public ResetPasswordValidation()
         {
             RuleFor(x => x.Email)
                 .NotNull()
                 .NotEmpty()
                 .EmailAddress();
 
-            RuleFor(x => x.Password)
-                .NotNull()
-                .NotEmpty()
-                .Length(8, 255);
+
         }
     }
 }

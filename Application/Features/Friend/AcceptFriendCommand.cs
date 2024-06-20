@@ -53,9 +53,8 @@ namespace Application.Features.Friend
                      Id=ObjectId.GenerateNewId().ToString(),
                      Content=$"{User!.Name} accepted the friend request!",
                      From=User.AccountId,
-                     To=request.Id!,
                      CreatedAt=DateTime.UtcNow,
-                     Type=Domain.Enums.NotificationType.InviteFriend
+                     Type=Domain.Enums.NotificationType.AppcectFriend
                 };
 
                 await _unitOfWork.friendRepository.AcceptFriend(User.AccountId!, request.Id!);
@@ -64,7 +63,9 @@ namespace Application.Features.Friend
 
                 await _unitOfWork.notificationRepository.RemoveNotification(User.AccountId!,request.Id!,Domain.Enums.NotificationType.InviteFriend);
 
-                await _hubContext.Clients.User(request.Id!).Notification(notificaton);
+                await _unitOfWork.notificationRepository.AddNotification(request.Id!,notificaton);
+
+                await _hubContext.Clients.Group(request.Id!).Notification(notificaton);
              
                 return Result<Object>.Success();
             }

@@ -1,6 +1,7 @@
 ﻿using Application.Features.User;
 using Infrastructure.Unit0fWork;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 
@@ -8,6 +9,7 @@ namespace ApiRealtimeChat.Controllers
 {
     [ApiController]
     [Route("api")]
+    [Authorize]
     public class UserController:ControllerBase
     {
         private readonly IMediator _mediator;
@@ -42,7 +44,7 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [HttpPut("user/profile/edit")]
-        public async Task<IActionResult> UpdateProfile(UpdateInforUserCommand command)
+        public async Task<IActionResult> UpdateProfile(UpdateProfileUserCommand command)
         {
             var result = await _mediator.Send(command);
 
@@ -58,10 +60,10 @@ namespace ApiRealtimeChat.Controllers
             return result.IsFailuer ? BadRequest(result.Error) : Ok(result.Data);
         }
 
-        [HttpDelete("user/avatar/delete/{id}")]
-        public async Task<IActionResult> RemoveAvatar(string id)
+        [HttpDelete("user/avatar/delete")]
+        public async Task<IActionResult> RemoveAvatar()
         {
-            var result = await _mediator.Send(new RemoveAvatarUserCommand(id));
+            var result = await _mediator.Send(new RemoveAvatarUserCommand());
 
             return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
         }

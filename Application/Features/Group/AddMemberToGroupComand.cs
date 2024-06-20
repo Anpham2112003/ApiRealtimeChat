@@ -1,9 +1,11 @@
 ﻿using Domain.Entities;
 using Domain.Errors;
 using Domain.Ultils;
+using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Org.BouncyCastle.Crypto;
 using System;
 using System.Collections.Generic;
@@ -25,23 +27,31 @@ namespace Application.Features.Group
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _accessor;
-        public HandAddMemberToGroup(IUnitOfWork unitOfWork, IHttpContextAccessor accessor)
+        private readonly IHubContext< HubService,IHubServices> _context;
+        public HandAddMemberToGroup(IUnitOfWork unitOfWork, IHttpContextAccessor accessor, IHubContext<HubService, IHubServices> context)
         {
             _unitOfWork = unitOfWork;
             _accessor = accessor;
+            _context = context;
         }
 
         public async Task<Result<string>> Handle(AddMemberToGroupComand request, CancellationToken cancellationToken)
         {
             try
             {
-                var UserId = _accessor.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
+                var UserId = _accessor.HttpContext!.User.GetIdFromClaim();
 
                 var result = await _unitOfWork.groupRepository.AddManyMemberToGroup(UserId,request.Id!, request.MemberId!);
 
                 if (result.MatchedCount.Equals(0)) return Result<string>.Failuer(GroupError.GroupNotFound);
 
-                
+                var notification = new Domain.Entities.Notification
+                {
+                    Type = Domain.Enums.NotificationType.NewConversation,
+                    Content = request.Id,
+                };
+                await _context.Clients.Groups(request.MemberId!).Notification(notification);
+
                 return Result<string>.Success("Ok!");
             }
             catch (Exception)

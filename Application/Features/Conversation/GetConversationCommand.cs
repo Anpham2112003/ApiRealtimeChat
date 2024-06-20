@@ -37,11 +37,15 @@ namespace Application.Features.Conversation
         {
             try
             {
-                var ToId = request.Id;
+                
 
-                var FromId = _accessor.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
+                var UserId = _accessor.HttpContext!.User.GetIdFromClaim();
 
-                var conversation = await _unitOfWork.conversationRepository.GetConversation(FromId, ToId!);
+                var checkUserExist = await _unitOfWork.accountRepository.CheckAccountExist(request.Id!);
+
+                if (!checkUserExist) return Result<ConversationConvert>.Failuer(new Error("NotFound",""));
+                
+                var conversation = await _unitOfWork.conversationRepository.GetConversation(UserId, request.Id!);
                 
                 if(conversation is null)
                 {
@@ -52,7 +56,7 @@ namespace Application.Features.Conversation
                         CreatedAt = DateTime.UtcNow,
                         MessagePinds= new List<ObjectId> { },
                         IsGroup = false,
-                        Owners = new List<ObjectId>() {ObjectId.Parse(FromId),ObjectId.Parse(ToId) },
+                        Owners = new List<ObjectId>() {ObjectId.Parse(UserId),ObjectId.Parse(request.Id!) },
                         Seen=DateTime.UtcNow,
                         
                     };
@@ -65,9 +69,10 @@ namespace Application.Features.Conversation
                     {
                         Type = Domain.Enums.NotificationType.NewConversation,
                         Content = newConversation.Id,
+                        
                     };
 
-                    await _hubContext.Clients.Groups(FromId,ToId!).Notification(notification);
+                    await _hubContext.Clients.Groups(UserId,request.Id!).Notification(notification);
                     
                     return Result<ConversationConvert>.Success(new ConversationConvert { Id=newConversation.Id});
                 }

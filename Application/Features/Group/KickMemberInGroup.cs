@@ -1,9 +1,11 @@
 ﻿using Domain.Enums;
 using Domain.Errors;
 using Domain.Ultils;
+using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,10 +25,12 @@ namespace Application.Features.Group
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _accessor;
-        public HandKickMemberInGroup(IUnitOfWork unitOfWork, IHttpContextAccessor accessor)
+        private readonly IHubContext<HubService,IHubServices> _hubContext;
+        public HandKickMemberInGroup(IUnitOfWork unitOfWork, IHttpContextAccessor accessor, IHubContext<HubService, IHubServices> hubContext)
         {
             _unitOfWork = unitOfWork;
             _accessor = accessor;
+            _hubContext = hubContext;
         }
 
         public async Task<Result<string>> Handle(KickMemberInGroupCommand request, CancellationToken cancellationToken)
@@ -34,7 +38,7 @@ namespace Application.Features.Group
             try
             {
                 var User = await _unitOfWork.groupRepository
-                    .GetMemberInGroup(request.Id!, _accessor.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid));
+                    .GetMemberInGroup(request.Id!, _accessor.HttpContext!.User.GetIdFromClaim());
 
                 var Member = await _unitOfWork.groupRepository.GetMemberInGroup(request.Id!, request.MemberId!);
 
@@ -44,6 +48,14 @@ namespace Application.Features.Group
                 if (User.Role.Equals(GroupRoles.Admin) && Member.Role.Equals(GroupRoles.Member) || User.Role.Equals(GroupRoles.Created))
                 {
                     await _unitOfWork.groupRepository.KickMemberInGroup(request.Id!, request.MemberId!);
+
+                    var notification = new Domain.Entities.Notification
+                    {
+                        Type = NotificationType.ConversationDelete,
+                        Content = request.Id
+                    };
+
+                    await _hubContext.Clients.Group(request.MemberId!).Notification(notification);
 
                     return Result<string>.Success("Ok!");
                 }

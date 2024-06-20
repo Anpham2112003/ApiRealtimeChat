@@ -21,5 +21,6 @@ namespace Infrastructure.Repository.BaseRepository
         public Task<UpdateResult> CancelFriendResquestAsync(string MyId, string CancelId);
         public  Task<List<SearchFriendResponeModel>> FriendSearchAsync(string name, string Id);
         public  Task<UpdateResult> RejectFriendRequest(string AccountId, string RejectId);
+        public  Task<List<UserConvert>?> GetFriendNotInGroup(string MyId, string GroupId, int skip, int limit);
     }
 }

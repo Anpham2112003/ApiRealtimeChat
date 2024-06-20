@@ -19,12 +19,7 @@ namespace Application.Features.User
 {
     public class RemoveAvatarUserCommand : IRequest<Result<string>>
     {
-        public string? AccountId { get; set; }
-
-        public RemoveAvatarUserCommand(string? accountId)
-        {
-            AccountId = accountId;
-        }
+        
     }
 
     public class HandRemoveAvatarUserCommand : IRequestHandler<RemoveAvatarUserCommand, Result<string>>
@@ -48,8 +43,9 @@ namespace Application.Features.User
         {
             try
             {
+                var userId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
                
-                var user = await _unitOfWork.userRepository.FindUserByAccountId(request.AccountId!);
+                var user = await _unitOfWork.userRepository.FindUserByAccountId(userId);
 
                 if (string.IsNullOrEmpty(user!.Avatar)) return Result<string>.Failuer(UserError.AvatarNull);
 

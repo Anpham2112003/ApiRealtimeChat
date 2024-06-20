@@ -1,5 +1,6 @@
 ﻿
 using Domain.Entities;
+using Domain.Enums;
 using Domain.ResponeModel.BsonConvert;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -22,6 +23,7 @@ namespace Infrastructure.Repository.BaseRepository
         public Task KickMemberInGroup(string Id, string MemberId);
         public Task<List<string>> DeleteGroupAsync(string Id);
         public Task<UpdateResult> LeaveGroup(string Id, string UserId);
+        public Task<UpdateResult> UpdateRole(string GroupId, string MemberId, GroupRoles role);
 
         public  Task<List<MembersGroupConvert>> GetMembersInGroup(string ConversationId, int skip, int limit);
 

@@ -6,21 +6,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Validation
+namespace Application.Validation.AccountValidation
 {
-    public class RemoveAccountValidation : AbstractValidator<RemoveAccountCommand>
+    public class SigninValidation : AbstractValidator<CreateAccountCommand>
     {
-        public RemoveAccountValidation()
+        public SigninValidation()
         {
+            RuleFor(x => x.FistName)
+                
+                .Length(1, 255);
+
+            RuleFor(x => x.LastName)
+               
+                .Length(1, 255);
+
             RuleFor(x => x.Email)
-                .NotEmpty()
-                .NotNull()
+                
                 .EmailAddress();
 
             RuleFor(x => x.Password)
-                .NotNull()
                 .NotEmpty()
+                .NotNull()
                 .Length(8, 255);
+
+
         }
     }
 }

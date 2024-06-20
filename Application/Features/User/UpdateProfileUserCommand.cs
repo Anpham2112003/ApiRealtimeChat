@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Application.Features.User
 {
-    public class UpdateInforUserCommand:IRequest<Result<UpdateInforUserCommand>>
+    public class UpdateProfileUserCommand:IRequest<Result<UpdateProfileUserCommand>>
     {
        
         public string? FistName {  get; set; }
@@ -25,7 +25,7 @@ namespace Application.Features.User
         public DateTime UpdatedAt = DateTime.UtcNow;
     }
 
-    public class HandUpdateInforUserCommand : IRequestHandler<UpdateInforUserCommand, Result<UpdateInforUserCommand>>
+    public class HandUpdateInforUserCommand : IRequestHandler<UpdateProfileUserCommand, Result<UpdateProfileUserCommand>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -35,7 +35,7 @@ namespace Application.Features.User
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<UpdateInforUserCommand>> Handle(UpdateInforUserCommand request, CancellationToken cancellationToken)
+        public async Task<Result<UpdateProfileUserCommand>> Handle(UpdateProfileUserCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace Application.Features.User
 
                 await _unitOfWork.userRepository.UpdateProfileUser(userId,request.ToBsonDocument());
                
-                return Result<UpdateInforUserCommand>.Success(request);
+                return Result<UpdateProfileUserCommand>.Success(request);
             }
             catch (Exception)
             {

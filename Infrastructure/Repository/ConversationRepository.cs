@@ -821,6 +821,26 @@ namespace Infrastructure.Repository
                         }
                     },
                     {
+                        "IsGroup",1
+                    },
+                    {
+                        "Group", new BsonDocument
+                        {
+                            {
+                                "Name",1
+                            },
+                            {
+                                "Avatar",1
+                            },
+                            {
+                                "TotalMember",1
+                            },
+                            {
+                                "UpdatedAt",1
+                            }
+                        }
+                    },
+                    {
                         "Seen",1
                     },
                     {
@@ -844,7 +864,7 @@ namespace Infrastructure.Repository
             var filter = buider.And
                 (
                    
-                    Builders<ConversationCollection>.Filter.In("Owners", new [] { ObjectId.Parse(from),ObjectId.Parse(to)}),
+                    Builders<ConversationCollection>.Filter.All("Owners", new [] { ObjectId.Parse(from),ObjectId.Parse(to)}),
 
                     Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, false)
 
@@ -1130,7 +1150,8 @@ namespace Infrastructure.Repository
         {
             var filter= Builders<ConversationCollection>.Filter.Where(x=>x.Id == ConversationId&&x.Owners!.Any(x=>x.Equals(ObjectId.Parse(UserId))));
             var projection = Builders<ConversationCollection>.Projection.
-                Include(x => x.Id)
+                Slice(x=>x.Owners,0,2)
+                .Include(x => x.Id)
                 .Include(x => x.IsGroup);
 
             var result = await _collection.Find(filter).Project<ConversationCollection?>(projection).FirstOrDefaultAsync();

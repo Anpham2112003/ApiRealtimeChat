@@ -167,7 +167,7 @@ namespace Infrastructure.Repository
                                                                                 }
                                                                             }
                                                                         },
-                                                                        "Nhin cai dau buoi",
+                                                                        "Message was deleted!",
                                                                         "$$item.Content"
                                                                     }
                                                                 }
@@ -260,8 +260,8 @@ namespace Infrastructure.Repository
             var filter = Builders<ConversationCollection>.Filter.And
                 (
                     Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId),
-                    Builders<ConversationCollection>.Filter.Eq("Owners", UserId),
-                    Builders<ConversationCollection>.Filter.ElemMatch(x=>x.Messages,x=>x.Id==MessageId)
+                    Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(UserId)),
+                    Builders<ConversationCollection>.Filter.ElemMatch(x=>x.Messages,x=>x.Id==MessageId&& x.AccountId==UserId)
                 );
 
             var update = Builders<ConversationCollection>.Update
@@ -296,7 +296,7 @@ namespace Infrastructure.Repository
 
         public async Task<UpdateResult> PindMessage(string ConversationId, string messageId)
         {
-            var filter =Builders<ConversationCollection>.Filter.Eq(x=>x.Id, ConversationId);
+            var filter = Builders<ConversationCollection>.Filter.Eq(x=>x.Id, ConversationId);
 
             var update = Builders<ConversationCollection>
                 .Update.AddToSet(x => x.MessagePinds, ObjectId.Parse(messageId));
@@ -306,7 +306,9 @@ namespace Infrastructure.Repository
 
         public async Task<UpdateResult> UnPindMessage(string ConversationId,string UserId ,string MessageId)
         {
-            var filter = Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId);
+            var filter = Builders<ConversationCollection>.Filter.And(
+                    Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId),
+                    Builders<ConversationCollection>.Filter.Eq("MessagePinds", ObjectId.Parse(MessageId)));
 
             var update = Builders<ConversationCollection>.Update
                 .Pull(x=>x.MessagePinds,ObjectId.Parse(MessageId));
@@ -455,6 +457,30 @@ namespace Infrastructure.Repository
                                                                                 }
                                                                             }
                                                                         }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    new BsonDocument
+                                                    {
+                                                        {
+                                                            "Content",new BsonDocument
+                                                            {
+                                                                {
+                                                                    "$cond", new BsonArray
+                                                                    {
+                                                                        new BsonDocument
+                                                                        {
+                                                                            {
+                                                                                "$eq",new BsonArray
+                                                                                {
+                                                                                    "$$item.IsDelete",true
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "Message was deleted!",
+                                                                        "$$item.Content"
                                                                     }
                                                                 }
                                                             }
