@@ -38,9 +38,9 @@ namespace Application.Features.Group
             try
             {
                 var User = await _unitOfWork.groupRepository
-                    .GetMemberInGroup(request.Id!, _accessor.HttpContext!.User.GetIdFromClaim());
+                    .FindMemberInGroup(request.Id!, _accessor.HttpContext!.User.GetIdFromClaim());
 
-                var Member = await _unitOfWork.groupRepository.GetMemberInGroup(request.Id!, request.MemberId!);
+                var Member = await _unitOfWork.groupRepository.FindMemberInGroup(request.Id!, request.MemberId!);
 
                 if (User is null || Member is null) return Result<string>.Failuer(GroupError.UserNotFound);
 

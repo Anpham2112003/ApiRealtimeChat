@@ -12,15 +12,18 @@ namespace Infrastructure.Repository.BaseRepository
 {
     public interface IFriendRepository :BaseRepository<FriendCollection>
     {
-        public Task AddFriendAsync(string AccountId, string FriendId);
-        public  Task<UpdateResult> RemoveFriendAsync(string AccountId, string FriendId);
-        public Task<List<UserConvert>> GetFriendAysnc(string AccountId,int skip, int limit);
-        public  Task<List<FriendWaitListResponeModel>> GetInfoFromWatiList(string AccountId, int skip, int limit);
-        public Task AcceptFriend(string myId, string WaitListId);
-        public Task AddToWaitlistAsync(string AccountId, string MyId);
+       
+        public  Task RemoveFriendAsync(string AccountId, string FriendId);
+        public Task<List<UserResponseModel>> GetFriendAysnc(string AccountId,int skip, int limit);
+        public  Task<List<UserResponseModel>> GetInfoFromWatiList(string AccountId, int skip, int limit);
+        public Task<BulkWriteResult> AcceptFriend(string AccountId, string FriendId);
+        public Task<UpdateResult> AddToWaitlistAsync(string AccountId, string MyId);
         public Task<UpdateResult> CancelFriendResquestAsync(string MyId, string CancelId);
-        public  Task<List<SearchFriendResponeModel>> FriendSearchAsync(string name, string Id);
+        public  Task<List<UserResponseModel>> FriendSearchAsync(string name, string Id);
         public  Task<UpdateResult> RejectFriendRequest(string AccountId, string RejectId);
-        public  Task<List<UserConvert>?> GetFriendNotInGroup(string MyId, string GroupId, int skip, int limit);
+        public  Task<List<UserResponseModel>?> GetFriendNotInGroup(string MyId, string GroupId, int skip, int limit);
+        public  Task<bool> HasInvitedOrFriend(string FriendId, string MyId);
+        public  Task<bool> HasInInviteList(string MyId, string AccountId);
+        public  Task<bool> HasFriend(string AccountId, string FriendId);
     }
 }

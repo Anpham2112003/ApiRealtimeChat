@@ -1,5 +1,5 @@
 ﻿using Domain.Entities;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
@@ -33,7 +33,7 @@ namespace Infrastructure.Repository
             _collection.Indexes.CreateMany(indexs);
         }
 
-        public async Task<ConversationConvert> GetConversationByIdAsync(string ConversationId, string UserId)
+        public async Task<ConversationResponseModel?> GetConversationByIdAsync(string ConversationId, string UserId)
         {
             var filter = Builders<ConversationCollection>.Filter.And(
                 Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId),
@@ -71,42 +71,17 @@ namespace Infrastructure.Repository
                                 }
                             },
                             {
-                                "filterMessage", new BsonDocument
+                                "slicePinds",new BsonDocument
                                 {
                                     {
-                                        "$filter", new BsonDocument
+                                        "$slice",new BsonArray
                                         {
-                                            {
-                                                "input","$Messages"
-                                            },
-                                            {
-                                                "as","item"
-                                            },
-                                            {
-                                                "cond", new BsonDocument
-                                                {
-                                                    {
-                                                        "$in", new BsonArray
-                                                        {
-                                                            "$$item._id", new BsonDocument
-                                                            {
-                                                                {
-                                                                    "$slice", new BsonArray
-                                                                    {
-                                                                        "$MessagePinds",-10
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                            "$Pinds",-1
                                         }
                                     }
                                 }
                             }
-                        }
-                    }
+                    }   }
                 })
                 .AppendStage<BsonDocument>(new BsonDocument
                 {
@@ -117,7 +92,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","filterMessage.AccountId"
+                                "localField","slicePinds.AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -145,9 +120,8 @@ namespace Infrastructure.Repository
                                                 {
                                                     "Avatar",1
                                                 },
-                                                {
-                                                    "Gender",1
-                                                }
+                                              
+                                                
                                             }
                                         }
                                     }
@@ -196,9 +170,7 @@ namespace Infrastructure.Repository
                                                 {
                                                     "Avatar",1
                                                 },
-                                                {
-                                                    "Gender",1
-                                                }
+                                                
                                             }
                                         }
                                     }
@@ -359,13 +331,13 @@ namespace Infrastructure.Repository
                         }
                     },
                     {
-                        "MessagePinds", new BsonDocument
+                        "Pinds", new BsonDocument
                         {
                             {
                                 "$map", new BsonDocument
                                 {
                                     {
-                                        "input","$filterMessage"
+                                        "input","$slicePinds"
                                     },
                                     {
                                         "as","item"
@@ -437,12 +409,12 @@ namespace Infrastructure.Repository
                     {
                         "CreatedAt",1
                     }
-                }).As<ConversationConvert>().FirstOrDefaultAsync();
+                }).As<ConversationResponseModel>().FirstOrDefaultAsync();
 
             return aggy;
         }
 
-        public async Task<List<ConversationConvert>> GetAllConversationAsync(string UserId, int skip,int limit)
+        public async Task<List<ConversationResponseModel>> GetAllConversationAsync(string UserId, int skip,int limit)
         {
             var filter = Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(UserId));
 
@@ -500,7 +472,7 @@ namespace Infrastructure.Repository
                                                                 {
                                                                      "$slice", new BsonArray
                                                                      {
-                                                                        "$MessagePinds",-10
+                                                                        "$Pinds",-10
                                                                      }
                                                                 }
                                                             }
@@ -672,7 +644,7 @@ namespace Infrastructure.Repository
                         "Owners","$OwnerResult"
                     },
                     {
-                        "MessagePinds",new BsonDocument
+                        "Pinds",new BsonDocument
                         {
                             {
                                 "$map", new BsonDocument
@@ -851,16 +823,17 @@ namespace Infrastructure.Repository
                     {
                         "Seen",-1
                     }
-                }).As<ConversationConvert>().ToListAsync();
+                }).As<ConversationResponseModel>().ToListAsync();
 
             Debug.WriteLine(aggry);
 
             return aggry;
         }
 
-        public async Task<ConversationConvert?> GetConversation(string from, string to)
+        public async Task<ConversationResponseModel?> GetConversation(string from, string to)
         {
             var buider = Builders<ConversationCollection>.Filter;
+
             var filter = buider.And
                 (
                    
@@ -904,7 +877,7 @@ namespace Infrastructure.Repository
                                                      "FullName",1
                                                  },
                                                  {
-                                                     "Gender",1
+                                                     "Avatar",1
                                                  },
                                                  {
                                                      "State",1
@@ -938,38 +911,13 @@ namespace Infrastructure.Repository
                             },
                             
                             {
-                                "filterMessage", new BsonDocument
+                                "slicePinds", new BsonDocument
                                 {
                                     {
-                                        "$filter", new BsonDocument
+                                        "$slice", new BsonArray
                                         {
-                                            {
-                                                "input","$Messages"
-                                            },
-                                            {
-                                                "as","item"
-                                            },
-                                            {
-                                                "cond", new BsonDocument
-                                                {
-                                                    {
-                                                        "$in", new BsonArray
-                                                        {
-                                                            "$$item._id",new BsonDocument
-                                                            {
-                                                                {
-                                                                     "$slice", new BsonArray
-                                                                     {
-                                                                        "$MessagePinds",-10
-                                                                     }
-                                                                }       
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                            "$Pinds",-10
+                                    }   }
                                 }
                             }
                             
@@ -1065,13 +1013,13 @@ namespace Infrastructure.Repository
                          }
                      },
                      {
-                         "MessagePinds",new BsonDocument
+                         "Pinds",new BsonDocument
                          {
                              {
                                  "$map", new BsonDocument
                                  {
                                      {
-                                         "input", "$filterMessage"
+                                         "input", "$slicePinds"
                                      },
                                      {
                                          "as","item"
@@ -1139,45 +1087,45 @@ namespace Infrastructure.Repository
                      {
                          "CreatedAt",1
                      }
-                 }).As<ConversationConvert>().FirstOrDefaultAsync();
+                 }).As<ConversationResponseModel>().FirstOrDefaultAsync();
 
             Debug.WriteLine(aggry);
             return aggry;
 
         }
 
-        public async Task<ConversationCollection?> GetInforConversation(string UserId,string ConversationId)
-        {
-            var filter= Builders<ConversationCollection>.Filter.Where(x=>x.Id == ConversationId&&x.Owners!.Any(x=>x.Equals(ObjectId.Parse(UserId))));
-            var projection = Builders<ConversationCollection>.Projection.
-                Slice(x=>x.Owners,0,2)
-                .Include(x => x.Id)
-                .Include(x => x.IsGroup);
-
-            var result = await _collection.Find(filter).Project<ConversationCollection?>(projection).FirstOrDefaultAsync();
-
-            return result;
-        }
 
         public async Task<DeleteResult> RemoveConversation(string ConversationId)
         {
-            var result = await _collection.DeleteOneAsync(x=>x.Id==ConversationId);
+            var filter = Builders<ConversationCollection>.Filter.And(
+                Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId),
+                Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, false)
+            );
 
-            return result;
+            return await _collection!.DeleteOneAsync(filter);
         }
-
 
 
         public async Task<IEnumerable<string?>> GetConversationId(string id)
         {
             var filter = Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(id));
-            var project = Builders<ConversationCollection>.Projection.Include(x => x.Id);
 
-            var result = await _collection!.Find(filter).Project<ConversationCollection>(project).ToListAsync();
+            var project = Builders<ConversationCollection>.Projection.Expression(x=>x.Id!.ToString());
 
-            var ids= result.Select(x => x.Id);
+            var result = await _collection!.Find(filter).Project<string>(project).ToListAsync();
 
-            return ids;
+            return result;
+        }
+
+        public async Task<bool> HasInConversation(string conversationId,string MyId)
+        {
+            var filter = Builders<ConversationCollection>.Filter.And(
+
+                Builders<ConversationCollection>.Filter.Eq(x => x.Id, conversationId),
+                Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(MyId))
+            );
+
+            return await _collection.Find(filter).AnyAsync();
         }
     }
         

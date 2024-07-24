@@ -6,15 +6,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.ResponeModel.BsonConvert
+namespace Domain.ResponeModel
 {
-    public class AccountInformationConvert
+    public class AccountInformationResponseModel
     {
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public string? Id {  get; set; }
+        public string? Id { get; set; }
         public string? Email { get; set; }
         public string? Password { get; set; }
         public bool IsDelete { get; set; }
-        public User? User { get; set; }
+        public UserResponseModel? User { get; set; }
     }
 }

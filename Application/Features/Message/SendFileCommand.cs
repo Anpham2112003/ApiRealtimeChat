@@ -1,6 +1,7 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
 using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services;
 using Infrastructure.Services.HubServices;
@@ -71,7 +72,7 @@ namespace Application.Features.Message
 
                 if (result.ModifiedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
 
-                var messageReceiver = new ClientMessageReceiver
+                var messageReceiver = new ClientMessageResponseModel
                 {
                     Id = message.Id,
                     AccountId = message.AccountId,
@@ -80,12 +81,11 @@ namespace Application.Features.Message
                     IsDelete = false,
                     MessageType = MessageType.Message,
                     User = user
-
                 };
 
                 await _awsServices.UploadFileAsync(_configuration["Aws:Bucket"]!, url.ToString(), request.File);
 
-                await _hubContext.Clients.Groups(request.Id!).ReceiveMessage(request.Id!, messageReceiver);
+                await _hubContext.Clients.Groups(request.Id!).ReceiveMessage(request.Id!, new object[] {messageReceiver});
 
                 return Result<string>.Success("Ok");
             }

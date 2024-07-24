@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Friend
 {
-    public class GetFriendCommand:IRequest<Result<PagingRespone<List<UserConvert>>>>
+    public class GetFriendCommand:IRequest<Result<ScrollPage<UserResponseModel>>>
     {
        
         public int skip {  get; set; }
@@ -29,7 +29,7 @@ namespace Application.Features.Friend
         }
     }
 
-    public class HandGetFriend : IRequestHandler<GetFriendCommand, Result<PagingRespone<List<UserConvert>>>>
+    public class HandGetFriend : IRequestHandler<GetFriendCommand, Result<ScrollPage<UserResponseModel>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -39,7 +39,7 @@ namespace Application.Features.Friend
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<PagingRespone<List<UserConvert>>>> Handle(GetFriendCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ScrollPage<UserResponseModel>>> Handle(GetFriendCommand request, CancellationToken cancellationToken)
         {
             try {
 
@@ -47,11 +47,11 @@ namespace Application.Features.Friend
 
                 var result = await _unitOfWork.friendRepository.GetFriendAysnc(UserId, request.skip, request.limit);
 
-                if (!result.Any()) return Result<PagingRespone<List<UserConvert>>>.Failuer(FriendError.DocumentNotFound);
+                if (!result.Any()) return Result<ScrollPage<UserResponseModel>>.Failuer(FriendError.DocumentNotFound);
 
-                var page = new PagingRespone<List<UserConvert>>(request.skip, request.limit, result);
+                var page = new ScrollPage<UserResponseModel>(request.skip, request.limit, result);
 
-                return Result<PagingRespone<List<UserConvert>>>.Success(page);
+                return Result<ScrollPage<UserResponseModel>>.Success(page);
             }
             catch (Exception)
             {

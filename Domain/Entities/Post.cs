@@ -1,4 +1,4 @@
-﻿using Domain.Enums;
+﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -8,13 +8,19 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    public class PindMessage
+    public class Post:Change
     {
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
         public string? Id {  get; set; }
+
+        [BsonRepresentation(BsonType.ObjectId)]
         public string? AccountId {  get; set; }
-        public string? By {  get; set; }
+        public int PageId {  get; set; }
         public string? Content {  get; set; }
-        public MessageType Type { get; set; }
+        public int Likes {  get; set; }
+        public List<ObjectId>? ListLike { get; set; }
+        public List<string>? Images { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

@@ -83,18 +83,22 @@ namespace Infrastructure.Repository
             await _collection!.UpdateOneAsync(filter,update);
         }
 
-        public async Task<List<UserConvert>> SearchUser(string name)
+        public async Task<List<UserResponseModel>> SearchUser(string name)
         {
             var filter = Builders<UserCollection>.Filter.Regex(x => x.FullName, new Regex($"^{name}"));
 
-            var project = Builders<UserCollection>.Projection.
-                Exclude(x => x.Id)
-                .Exclude(x => x.FistName)
-                .Exclude(x => x.LastName);
+            var project = Builders<UserCollection>.Projection.Expression(x => new UserResponseModel
+            {
+                AccountId = x.AccountId,
+                Avatar = x.Avatar,
+                FullName = x.FullName,
+                State = x.State,
+            });
+             
                
            
 
-            return await _collection.Find(filter).Project<UserConvert>(project).ToListAsync();
+            return await _collection.Find(filter).Project<UserResponseModel>(project).ToListAsync();
         }
 
         public async Task<ViewProfileResponeModel?> ViewProfileUser(string Id, string UserId)
@@ -145,7 +149,7 @@ namespace Infrastructure.Repository
                                                             "$in", new BsonArray
                                                             {
                                                                 UserId,
-                                                                "$WaitingList"
+                                                                "$WaitList"
                                                             }
                                                         }
                                                     }

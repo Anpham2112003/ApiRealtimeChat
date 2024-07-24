@@ -54,15 +54,15 @@ namespace Infrastructure.Services.HubServices
         }
 
 
-       public async Task JoinGroup(string id)
+       public async Task ClientJoinGroup(string id)
        {
             try
             {
                 var UserId = Context.User!.GetIdFromClaim();
 
-                var check = await _unitOfWork.conversationRepository.GetInforConversation(UserId, id);
+                var check = await _unitOfWork.conversationRepository.HasInConversation(id, UserId);
 
-                if (check is null) Context.Abort();
+                if (!check ) Context.Abort();
 
                 await Groups.AddToGroupAsync(Context.ConnectionId,id);
             }
@@ -122,6 +122,8 @@ namespace Infrastructure.Services.HubServices
             await _unitOfWork.userRepository.ChangeStateUserAsync(UserId,state:Domain.Enums.UserState.Offline);
 
             await _redisService.SetHashValueToRedis(UserId, new HashEntry[] { new HashEntry("State", "1") });
+
+            await Clients.Client(Context.ConnectionId).Notification("DisConnection");
 
             await base.OnDisconnectedAsync(exception);
         }

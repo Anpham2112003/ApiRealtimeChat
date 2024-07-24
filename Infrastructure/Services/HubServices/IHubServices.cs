@@ -10,7 +10,7 @@ namespace Infrastructure.Services.HubServices
     public interface IHubServices
     {
         
-        public Task ReceiveMessage( string conversationId,object message);
+        public Task ReceiveMessage( string conversationId,object[]? message);
 
         public Task Notification(object message);
 

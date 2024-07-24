@@ -45,13 +45,13 @@ namespace Application.Features.Group
                 var message = new Domain.Entities.Message
                 {
                     Id=ObjectId.GenerateNewId().ToString(),
-                    Content = $"{User.Name} leaved group!",
+                    Content = $"{User.FullName} leaved group!",
                     CreatedAt = DateTime.Now,
                     MessageType=Domain.Enums.MessageType.Notification
                     
                 };
                 
-                await _hubContext.Clients.Group(request.Id!).ReceiveMessage(request.Id!, message);
+                await _hubContext.Clients.Group(request.Id!).ReceiveMessage(request.Id!, new object[] { message });
 
                 return Result<string>.Success("Success!");
             }

@@ -43,7 +43,7 @@ namespace Application.Features.Group
                     Owners = new List<ObjectId> { ObjectId.Parse(UserId) },
                     IsGroup = true,
                     Messages = new List<Domain.Entities.Message>(),
-                    MessagePinds = new List<ObjectId>(),
+                    Pinds = new List<Domain.Entities.Message>(),
                     Seen = DateTime.UtcNow,
                     CreatedAt=DateTime.UtcNow,
                     Group = new Domain.Entities.Group

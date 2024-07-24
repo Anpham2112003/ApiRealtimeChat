@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Friend
 {
-    public class GetFriendNotInGroupCommand:IRequest<Result<PagingRespone<List<UserConvert>>>>
+    public class GetFriendNotInGroupCommand:IRequest<Result<ScrollPage<UserResponseModel>>>
     {
         public string Id {  get; set; }
         public int skip {  get; set; }
@@ -25,7 +25,7 @@ namespace Application.Features.Friend
             this.take = take;
         }
     }
-    public class HandGetFriendNotInGroupCommand : IRequestHandler<GetFriendNotInGroupCommand, Result<PagingRespone<List<UserConvert>>>>
+    public class HandGetFriendNotInGroupCommand : IRequestHandler<GetFriendNotInGroupCommand, Result<ScrollPage<UserResponseModel>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -36,7 +36,7 @@ namespace Application.Features.Friend
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<PagingRespone<List<UserConvert>>>> Handle(GetFriendNotInGroupCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ScrollPage<UserResponseModel>>> Handle(GetFriendNotInGroupCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -44,9 +44,9 @@ namespace Application.Features.Friend
 
                 var result = await _unitOfWork.friendRepository.GetFriendNotInGroup(UserId, request.Id, request.skip, request.take);
 
-                if (result is null || !result.Any()) return Result< PagingRespone<List<UserConvert>>>.Failuer(new Error("Not found", "not found"));
+                if (result is null || !result.Any()) return Result< ScrollPage<UserResponseModel>>.Failuer(new Error("Not found", "not found"));
 
-                return Result< PagingRespone<List<UserConvert>>>.Success(new PagingRespone<List<UserConvert>>
+                return Result< ScrollPage<UserResponseModel>>.Success(new ScrollPage<UserResponseModel>
                 {
                     Data = result,
                     Index = request.skip,

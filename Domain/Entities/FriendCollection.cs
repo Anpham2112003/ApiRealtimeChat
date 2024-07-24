@@ -20,31 +20,18 @@ namespace Domain.Entities
        
         [BsonRepresentation(BsonType.ObjectId)]
         public string? AccountId { get; set; }
-        public List<ObjectId> WaitingList { get; set; }
+        public List<ObjectId> WaitList { get; set; }
         public List<Friend>? Friends { get; set; }
 
         public FriendCollection(string id, string accountId)
         {
             Id = id;
             AccountId = accountId;
-            WaitingList = new List<ObjectId>();
+            WaitList = new List<ObjectId>();
             Friends = new List<Friend>();
         }
     }
 
 
-    public class FriendResult
-    {
-
-
-
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; }
-
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string? AccountId { get; set; }
-
-        public ArrayList? Friends { get; set; }
-    }
+   
 }

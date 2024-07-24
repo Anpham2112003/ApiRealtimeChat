@@ -8,15 +8,16 @@ using System.Threading.Tasks;
 
 namespace Domain.ResponeModel
 {
-    public class SearchFriendResponeModel
+    [BsonIgnoreExtraElements]
+    public class MembersGroupResponseModel
     {
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public string? AccountId { get; set; }
-
+        public string? Id { get; set; }
         public string? FullName { get; set; }
-        public bool Gender { get; set; }
         public string? Avatar { get; set; }
         public UserState State { get; set; }
+        public GroupRoles Role { get; set; }
     }
+
 
 }

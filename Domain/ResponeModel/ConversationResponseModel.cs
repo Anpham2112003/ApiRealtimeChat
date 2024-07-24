@@ -7,21 +7,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.ResponeModel.BsonConvert
+namespace Domain.ResponeModel
 {
-    public class ConversationConvert
+    public class ConversationResponseModel
     {
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
-        public List<User>? Owners { get; set; }
-        public List<ClientMessageReceiver>? Messages { get; set; }
-        public List<ClientMessageReceiver>? MessagePinds { get; set; }
+        public List<UserResponseModel>? Owners { get; set; }
+        public List<ClientMessageResponseModel>? Messages { get; set; }
+        public List<ClientMessageResponseModel>? Pinds { get; set; }
         public bool IsGroup { get; set; }
 
         [BsonIgnoreIfNull]
         public Group? Group { get; set; }
         public DateTime Seen { get; set; }
         public DateTime CreatedAt { get; set; }
-        
+
     }
 }

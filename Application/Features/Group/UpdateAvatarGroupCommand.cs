@@ -63,14 +63,14 @@ namespace Application.Features.Group
                 
                 var message = new Domain.Entities.Message
                 {
-                    Content=$"{User.Name} was change avatar Group!",
+                    Content=$"{User.FullName} was change avatar Group!",
                     MessageType=Domain.Enums.MessageType.Notification,
                     CreatedAt=DateTime.UtcNow,  
                 };
 
                 await _unitOfWork.messageRepository.SendMessageAsync(request.Id!,User.AccountId!,message);
 
-                await _hubContext.Clients.Groups(request.Id!).ReceiveMessage(request.Id!,message);
+                await _hubContext.Clients.Groups(request.Id!).ReceiveMessage(request.Id!,new object[] { message });
 
                 return Result<string>.Success(url);
             }

@@ -1,5 +1,5 @@
 ﻿using Domain.Entities;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
@@ -46,27 +46,61 @@ namespace Infrastructure.Repository
             await base._collection!.UpdateOneAsync(filter, update);
         }
 
-        public async Task<bool> CheckAccountExist(string id)
-        {
-            var filter= Builders<AccountCollection>
-                .Filter.Eq(x=>x.Id, id);
+      
 
-            var fields = Builders<AccountCollection>
-                .Projection.Include(x => x.Id);
-            
-            var result = await _collection.Find(filter)
-                .Project<AccountCollection>(fields)
-                .FirstOrDefaultAsync();
-
-           return result is null ? false: true;
-        }
-
-        public async Task<AccountInformationConvert?> GetAccountInformationAsync(string Email)
+        public async Task<AccountInformationResponseModel?> GetAccountInformationAsync(string Email)
         {
             
             var result = await _collection.Aggregate()
                 .Match(x=>x.Email==Email)
-                .Lookup(nameof(UserCollection),"_id","AccountId","User")
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup", new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","_id"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline",new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project",new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","User"
+                            }
+                        }
+                    }
+                })
                 .Project(new BsonDocument
                 {
                     {
@@ -92,7 +126,7 @@ namespace Infrastructure.Repository
                             }
                         }
                     }
-                }).As<AccountInformationConvert>()
+                }).As<AccountInformationResponseModel>()
                 .FirstOrDefaultAsync();
 
             return result;

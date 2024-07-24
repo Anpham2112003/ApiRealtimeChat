@@ -1,6 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Errors;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
@@ -13,12 +13,12 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Conversation
 {
-    public class GetConversationByIdCommand:IRequest<Result<ConversationConvert>>
+    public class GetConversationByIdCommand:IRequest<Result<ConversationResponseModel>>
     {       
         public string? Id { get; set; }
     }
 
-    public class HandGetConversatiomByIdCommand : IRequestHandler<GetConversationByIdCommand, Result<ConversationConvert>>
+    public class HandGetConversatiomByIdCommand : IRequestHandler<GetConversationByIdCommand, Result<ConversationResponseModel>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -28,7 +28,7 @@ namespace Application.Features.Conversation
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<ConversationConvert>> Handle(GetConversationByIdCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ConversationResponseModel>> Handle(GetConversationByIdCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -36,9 +36,9 @@ namespace Application.Features.Conversation
 
                 var result = await _unitOfWork.conversationRepository.GetConversationByIdAsync(request.Id!, UserId);
 
-                if (result is null) return Result<ConversationConvert>.Failuer(ConversationError.NotFound);
+                if (result is null) return Result<ConversationResponseModel>.Failuer(ConversationError.NotFound);
 
-                return Result<ConversationConvert>.Success(result);
+                return Result<ConversationResponseModel>.Success(result);
             }
             catch (Exception)
             {

@@ -42,28 +42,19 @@ namespace Application.Features.Message
 
                 if (result.MatchedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
 
+              
                 var message = new Domain.Entities.Message
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
-                    MessageType = Domain.Enums.MessageType.UnPindMessage,
-                    Content = request.MessageId,
-                    
-                };
-                var notification = new Domain.Entities.Message
-                {
-                    Id = ObjectId.GenerateNewId().ToString(),
                     MessageType = Domain.Enums.MessageType.Notification,
-                    Content = $"{User.Name} unpinded message",
+                    Content = $"{User.FullName} unpinded message",
                     CreatedAt = DateTime.UtcNow,
                 };
 
+                await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!, message);
 
+                await _hubContext.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, new object[] {message});
 
-                await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!, notification);
-
-                await _hubContext.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!,message);
-
-                await _hubContext.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, notification);
 
                 return Result<string>.Success("Ok!");
             }

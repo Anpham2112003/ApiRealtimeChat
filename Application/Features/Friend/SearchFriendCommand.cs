@@ -1,7 +1,6 @@
 ﻿using Application.Errors;
 using Domain.Entities;
 using Domain.ResponeModel;
-using Domain.ResponeModel.BsonConvert;
 using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
@@ -14,13 +13,13 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Friend
 {
-    public class SearchFriendCommand:IRequest<Result<List<SearchFriendResponeModel>>>
+    public class SearchFriendCommand:IRequest<Result<List<UserResponseModel>>>
     {
         public string? Name { get; set; }
         
     }
 
-    public class HandSearchFriendCommand : IRequestHandler<SearchFriendCommand, Result<List<SearchFriendResponeModel>>>
+    public class HandSearchFriendCommand : IRequestHandler<SearchFriendCommand, Result<List<UserResponseModel>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -30,7 +29,7 @@ namespace Application.Features.Friend
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<List<SearchFriendResponeModel>>> Handle(SearchFriendCommand request, CancellationToken cancellationToken)
+        public async Task<Result<List<UserResponseModel>>> Handle(SearchFriendCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -38,9 +37,9 @@ namespace Application.Features.Friend
 
                 var result = await _unitOfWork.friendRepository.FriendSearchAsync(request.Name!, UserId);
 
-                if (result.Any()) return Result<List<SearchFriendResponeModel>>.Success(result); 
+                if (result.Any()) return Result<List<UserResponseModel>>.Success(result); 
 
-                return Result<List<SearchFriendResponeModel>>.Failuer(FriendError.DocumentNotFound);
+                return Result<List<UserResponseModel>>.Failuer(FriendError.DocumentNotFound);
             }
             catch (Exception)
             {

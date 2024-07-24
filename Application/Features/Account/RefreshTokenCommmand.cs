@@ -62,10 +62,10 @@ namespace Application.Features.Account
                    
                     if (!Cache[4].ToString().Equals(request.Token)) return Result<LoginResponseModel>.Failuer(new Error("Unauthorization", ""));
 
-                    var jsonUser = JsonSerializer.Serialize(new Domain.Entities.User
+                    var jsonUser = JsonSerializer.Serialize(new UserResponseModel
                     {
                         AccountId = userId,
-                        Name = Cache[1].ToString(),
+                        FullName = Cache[1].ToString(),
                         Avatar = Cache[2].ToString(),
                         State = (UserState)Enum.Parse(typeof(UserState), Cache[3]!.ToString())
                     });
@@ -112,7 +112,7 @@ namespace Application.Features.Account
                     var hash = new HashEntry[]
                    {
                         new HashEntry("Email",email),
-                        new HashEntry("Name",user.User!.Name),
+                        new HashEntry("FullName",user.User!.FullName),
                         new HashEntry("Avatar",user.User.Avatar),
                         new HashEntry("State",user.User.State.ToString()),
                         new HashEntry("ReFreshToken",refreshtoken)

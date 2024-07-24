@@ -8,8 +8,8 @@ namespace Domain.Enums
 {
     public enum UserState
     {
-        Online,
-        Offline,
-        Hidden
+        Online=0,
+        Offline=1,
+        Hidden=2
     }
 }

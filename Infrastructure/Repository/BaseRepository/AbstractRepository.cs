@@ -5,6 +5,7 @@ using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -52,6 +53,13 @@ namespace Infrastructure.Repository.BaseRepository
         public async Task<UpdateResult> UpdateAsync(FilterDefinition<ICollection> filter, UpdateDefinition<ICollection> update, UpdateOptions options)
         {
             return await _collection!.UpdateOneAsync(filter,update,options);
+        }
+
+        public async Task<bool> CheckExist(Expression<Func<ICollection, bool>> predicate)
+        {
+            var filter = Builders<ICollection>.Filter.Where(predicate);
+
+            return await _collection.Find(filter).AnyAsync();
         }
     }
 }

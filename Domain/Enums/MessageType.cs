@@ -8,13 +8,11 @@ namespace Domain.Enums
 {
     public enum MessageType
     {
-        Message,
-        Image,
-        File,
-        Git,
-        Videocall,
-        PindMessage,
-        Notification,
-        UnPindMessage
+        Message=0,
+        Image=1,
+        File=2,
+        PindMessage = 3,
+        Notification =4,
+       
     }
 }

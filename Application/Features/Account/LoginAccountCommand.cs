@@ -81,7 +81,7 @@ namespace Application.Features.Account
                 var hashs = new HashEntry[]
                 {
                     new HashEntry("Email",checkAccount.Email),
-                    new HashEntry("Name",checkAccount.User!.Name),
+                    new HashEntry("FullName", checkAccount.User !.FullName),
                     new HashEntry("Avatar",checkAccount.User.Avatar??""),
                     new HashEntry("State",checkAccount.User.State.ToString()),
                     new HashEntry("ReFreshToken",refreshToken)

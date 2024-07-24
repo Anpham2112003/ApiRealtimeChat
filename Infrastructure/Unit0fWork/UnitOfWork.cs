@@ -68,6 +68,18 @@ namespace Infrastructure.Unit0fWork
 
         private INotificationRepository _notificationRepository;
 
+        public IPostRepository postRepository 
+
+            => _postRepository ??= new PostRepository(_mongoDB);
+
+        private IPostRepository? _postRepository;
+
+        public ICommentRepository commentRepository 
+
+            => _commentRepository ??= new CommentRepository(_mongoDB);
+
+        private ICommentRepository? _commentRepository;
+
 
         public async Task<IClientSessionHandle> TransactionAsync()
         {

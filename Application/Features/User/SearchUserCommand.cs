@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Application.Features.User
 {
-    public class SearchUserCommand:IRequest<Result<List<UserConvert>>>
+    public class SearchUserCommand:IRequest<Result<List<UserResponseModel>>>
     {
         public string? name {  get; set; }
 
@@ -20,7 +20,7 @@ namespace Application.Features.User
             this.name = name;
         }
     }
-    public class HandSearchUserCommand : IRequestHandler<SearchUserCommand, Result<List<UserConvert>>>
+    public class HandSearchUserCommand : IRequestHandler<SearchUserCommand, Result<List<UserResponseModel>>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -29,13 +29,13 @@ namespace Application.Features.User
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Result<List<UserConvert>>> Handle(SearchUserCommand request, CancellationToken cancellationToken)
+        public async Task<Result<List<UserResponseModel>>> Handle(SearchUserCommand request, CancellationToken cancellationToken)
         {
             var result = await _unitOfWork.userRepository.SearchUser(request.name!);
 
-            if (result.Any()) return Result<List<UserConvert>>.Success(result);
+            if (result.Any()) return Result<List<UserResponseModel>>.Success(result);
 
-            return Result<List<UserConvert>>.Failuer(new Error("Not found", ""));
+            return Result<List<UserResponseModel>>.Failuer(new Error("Not found", ""));
         }
     }
 }

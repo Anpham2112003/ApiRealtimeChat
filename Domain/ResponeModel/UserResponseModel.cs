@@ -10,15 +10,13 @@ using System.Threading.Tasks;
 namespace Domain.ResponeModel
 {
 
-    [BsonIgnoreExtraElements]
-    public class UserConvert
+    public class UserResponseModel
     {
 
         [BsonRepresentation(BsonType.ObjectId)]
         public string? AccountId { get; set; }
         public string? FullName { get; set; }
         public string? Avatar { get; set; }
-        public bool Gender { get; set; }
         public UserState State { get; set; }
     }
 }

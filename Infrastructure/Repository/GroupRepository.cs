@@ -1,6 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
@@ -81,9 +81,10 @@ namespace Infrastructure.Repository
 
         }
 
-        public async Task<Member?> GetMemberInGroup(string Id, string MemberId)
+        public async Task<Member?> FindMemberInGroup(string Id, string MemberId)
         {
             var buider = Builders<ConversationCollection>.Filter.Where(x=>x.Id==Id&&x.IsGroup==true);
+
             var project = Builders<ConversationCollection>.Projection.Expression(x => x.Group!.Members!.FirstOrDefault(x=>x.Id==MemberId));
 
             var result = await _collection.Find(buider).Project(project)!.FirstOrDefaultAsync();
@@ -105,19 +106,7 @@ namespace Infrastructure.Repository
             await _collection!.UpdateOneAsync(filter, update);
         }
 
-        public async Task<List<string>> DeleteGroupAsync(string Id)
-        {
-            var filter = Builders<ConversationCollection>.Filter.Eq(x=>x.Id, Id);
-            var project = Builders<ConversationCollection>.Projection.Expression(x => x.Group!.Members!.Select(x=>x.Id).ToList());
-
-            var result =await _collection!.FindOneAndDeleteAsync(filter,new FindOneAndDeleteOptions<ConversationCollection, List<string>>
-            {
-                Projection=project!
-            });
-
-            return result;
-           
-        }
+       
 
         public async Task<UpdateResult> LeaveGroup(string Id, string UserId)
         {
@@ -137,7 +126,7 @@ namespace Infrastructure.Repository
             return await _collection!.UpdateOneAsync(filter,update);
         }
 
-        public async Task<List<MembersGroupConvert>> GetMembersInGroup(string ConversationId, int skip, int limit)
+        public async Task<IEnumerable<MembersGroupResponseModel>> GetMembersInGroup(string ConversationId, int skip, int limit)
         {
             var aggry = await _collection.Aggregate()
                 .Match(x => x.Id == ConversationId && x.IsGroup == true)
@@ -259,13 +248,12 @@ namespace Infrastructure.Repository
                             }
                         }
                     }
-                }).As<ListMemberInGroupConvert>().FirstOrDefaultAsync();
+                })
+                .Unwind("Members")
+                .ReplaceRoot<BsonDocument>("$Members")
+                .As<MembersGroupResponseModel>().ToListAsync();
 
-            Debug.WriteLine(aggry);
-
-            if (aggry is null ) return new List<MembersGroupConvert>();
-
-            return aggry.Members!;
+            return aggry is null ? Enumerable.Empty<MembersGroupResponseModel>() : aggry;
         }
 
         public async Task<UpdateResult> UpdateRole(string GroupId, string MemberId, GroupRoles role)

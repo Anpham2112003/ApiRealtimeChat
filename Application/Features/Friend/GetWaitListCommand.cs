@@ -1,5 +1,4 @@
 ﻿using Domain.ResponeModel;
-using Domain.ResponeModel.BsonConvert;
 using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
@@ -14,14 +13,14 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Friend
 {
-    public class GetWaitListCommand:IRequest<Result<PagingRespone<List<FriendWaitListResponeModel>>>>
+    public class GetWaitListCommand:IRequest<Result<ScrollPage<UserResponseModel>>>
     {
         public int index {  get; set; }
         public int limit {  get; set; }
 
     }
 
-    public class HandGetInforFriendFromWaitListCommand : IRequestHandler<GetWaitListCommand, Result<PagingRespone<List<FriendWaitListResponeModel>>>>
+    public class HandGetInforFriendFromWaitListCommand : IRequestHandler<GetWaitListCommand, Result<ScrollPage<UserResponseModel>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -32,7 +31,7 @@ namespace Application.Features.Friend
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<PagingRespone<List<FriendWaitListResponeModel>>>> Handle(GetWaitListCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ScrollPage<UserResponseModel>>> Handle(GetWaitListCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -40,9 +39,9 @@ namespace Application.Features.Friend
 
                 var result = await _unitOfWork.friendRepository.GetInfoFromWatiList(accountId!, request.index, request.limit);
 
-                var page = new PagingRespone<List<FriendWaitListResponeModel>>(request.index, request.limit, result);
+                var page = new ScrollPage<UserResponseModel>(request.index, request.limit, result);
 
-                return Result<PagingRespone<List<FriendWaitListResponeModel>>>.Success(page);
+                return Result<ScrollPage<UserResponseModel>>.Success(page);
             }
             catch (Exception)
             {

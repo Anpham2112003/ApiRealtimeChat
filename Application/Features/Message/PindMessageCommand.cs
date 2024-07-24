@@ -1,6 +1,7 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
 using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
@@ -45,15 +46,10 @@ namespace Application.Features.Message
                
                 var findMessage =await _unitOfWork.messageRepository.FindMessage(request.ConversationId!,request.MessageId!);
 
-                if (findMessage is null 
-                    || findMessage.MessageType.Equals(MessageType.Notification) 
-                    || findMessage.MessageType.Equals(MessageType.Videocall) 
-                    || findMessage.MessageType.Equals(MessageType.UnPindMessage)
-                    || findMessage.MessageType.Equals(MessageType.Git)
-                    || findMessage.MessageType.Equals(MessageType.PindMessage))
+                if (findMessage is null || findMessage.IsDelete==true || findMessage.AccountId is null )
                     return Result<string>.Failuer(new Error("Fail", "Cannot Pind Message"));
 
-                var pindMessage = new ClientMessageReceiver
+                var pindMessage = new ClientMessageResponseModel
                 {
                    AccountId= User.AccountId,
                    Content = findMessage.Content,
@@ -68,19 +64,17 @@ namespace Application.Features.Message
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
                     MessageType = MessageType.Notification,
-                    Content = $"{User.Name} pinned message!",
+                    Content = $"{User.FullName} pinned message!",
                     CreatedAt = DateTime.UtcNow,
                 };
 
-                var result = await _unitOfWork.messageRepository.PindMessage(request.ConversationId!,request.MessageId!);
-
-                if( result.MatchedCount==0) return Result<string>.Failuer(ConversationError.NotFound);
+                var result = await _unitOfWork.messageRepository.PindMessage(request.ConversationId!,findMessage);
 
                 await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!,notification);
 
-                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!,pindMessage);
+                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, new object[] {notification,pindMessage});
 
-                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, notification);
+
 
                 return Result<string>.Success("Ok");
             }

@@ -18,7 +18,7 @@ namespace Infrastructure.Repository.BaseRepository
         public  Task UpdateAvatarUser(string AccountId, string avatarUrl);
         public  Task UpdateProfileUser(string AccountId, BsonDocument document);
         public  Task RemoveAvatarUser(string AccountId);
-        public  Task<List<UserConvert>> SearchUser(string name);
+        public  Task<List<UserResponseModel>> SearchUser(string name);
         public Task<ViewProfileResponeModel?> ViewProfileUser(string Id, string UserId);
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Domain.Entities;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -12,12 +12,12 @@ namespace Infrastructure.Repository.BaseRepository
     public interface IConversationRepository:BaseRepository<ConversationCollection>
     {
 
-        public Task<ConversationConvert?> GetConversation(string from, string to);
+        public Task<ConversationResponseModel?> GetConversation(string from, string to);
 
-        public Task<List<ConversationConvert>> GetAllConversationAsync(string UserId, int skip, int limit);
-        public Task<ConversationCollection?> GetInforConversation(string UserId, string ConversationId);
+        public Task<List<ConversationResponseModel>> GetAllConversationAsync(string UserId, int skip, int limit);
         public  Task<DeleteResult> RemoveConversation(string ConversationId);
-        public  Task<ConversationConvert> GetConversationByIdAsync(string ConversationId, string UserId);
+        public  Task<ConversationResponseModel?> GetConversationByIdAsync(string ConversationId, string UserId);
         public  Task<IEnumerable<string?>> GetConversationId(string id);
+        public  Task<bool> HasInConversation(string conversationId, string MyId);
     }
 }

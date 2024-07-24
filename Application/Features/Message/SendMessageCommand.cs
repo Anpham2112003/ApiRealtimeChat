@@ -1,6 +1,7 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
 using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services;
 using Infrastructure.Services.HubServices;
@@ -61,7 +62,7 @@ namespace Application.Features.Message
 
                     if (result.ModifiedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
 
-                var messageReceiver = new ClientMessageReceiver
+                var messageReceiver = new ClientMessageResponseModel
                 {
                     Id = message.Id,
                     AccountId = message.AccountId,
@@ -73,7 +74,7 @@ namespace Application.Features.Message
 
                 };
 
-                    await _hub.Clients.Group(request.Id!).ReceiveMessage(request.Id!, messageReceiver);
+                    await _hub.Clients.Group(request.Id!).ReceiveMessage(request.Id!, new object[] { messageReceiver });
 
                     return Result<string>.Success("Ok");
                 

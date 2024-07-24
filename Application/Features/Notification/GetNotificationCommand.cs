@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Notification
 {
-    public class GetNotificationCommand:IRequest<Result<PagingRespone<List<Domain.Entities.Notification>>>>
+    public class GetNotificationCommand:IRequest<Result<ScrollPage<Domain.Entities.Notification>>>
     {
         public int skip {  get; set; }
         public int take { get; set; }
@@ -24,7 +24,7 @@ namespace Application.Features.Notification
         }
     }
 
-    public class HandGetNotificationCommand : IRequestHandler<GetNotificationCommand, Result<PagingRespone<List<Domain.Entities.Notification>>>>
+    public class HandGetNotificationCommand : IRequestHandler<GetNotificationCommand, Result<ScrollPage<Domain.Entities.Notification>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -35,7 +35,7 @@ namespace Application.Features.Notification
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<PagingRespone<List<Domain.Entities.Notification>>>> Handle(GetNotificationCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ScrollPage<Domain.Entities.Notification>>> Handle(GetNotificationCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -43,9 +43,9 @@ namespace Application.Features.Notification
 
                 var result = await _unitOfWork.notificationRepository.GetNotification(UserId, request.skip, request.take);
 
-                if (result is null) return Result<PagingRespone<List<Domain.Entities.Notification>>>.Failuer(new Error("NotFound", "Collection Not Found!"));
+                if (result is null) return Result<ScrollPage<Domain.Entities.Notification>>.Failuer(new Error("NotFound", "Collection Not Found!"));
 
-                return Result<PagingRespone<List<Domain.Entities.Notification>>>.Success(new PagingRespone<List<Domain.Entities.Notification>>
+                return Result<ScrollPage<Domain.Entities.Notification>>.Success(new ScrollPage<Domain.Entities.Notification>
                 {
                     Index = request.skip,
                     Limit = request.take,

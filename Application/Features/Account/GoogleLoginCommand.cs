@@ -82,11 +82,11 @@ namespace Application.Features.Account
 
                     await Task.WhenAll(addAccount, addUser);
 
-                    var jsonUser = JsonSerializer.Serialize(new Domain.Entities.User
+                    var jsonUser = JsonSerializer.Serialize(new UserResponseModel
                     {
                         AccountId = account.Id,
                         Avatar = "",
-                        Name = user.FistName,
+                        FullName = user.FullName,
                         State = user.State
                     });
 
@@ -98,12 +98,12 @@ namespace Application.Features.Account
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
-                    var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
+                    var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddDays(7));
 
                     var hashs = new HashEntry[]
                     {
                         new HashEntry("Email",account.Email),
-                        new HashEntry("Name",user.FistName),
+                        new HashEntry("FullName",user.FullName),
                         new HashEntry("Avatar",user.Avatar??""),
                         new HashEntry("State",user.State.ToString()),
                         new HashEntry("ReFreshToken",refreshToken)
@@ -127,12 +127,12 @@ namespace Application.Features.Account
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
-                    var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddMinutes(1));
+                    var refreshToken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, claims, DateTime.UtcNow.AddDays(7));
 
                     var hashs = new HashEntry[]
                    {
                         new HashEntry("Email",check.Email),
-                        new HashEntry("Name",check.User!.Name),
+                        new HashEntry("FullName",check.User!.FullName),
                         new HashEntry("Avatar",check.User.Avatar??""),
                         new HashEntry("State",check.User.State.ToString()),
                         new HashEntry("ReFreshToken",refreshToken)

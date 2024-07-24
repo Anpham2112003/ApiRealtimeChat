@@ -1,5 +1,5 @@
 ﻿using Domain.Entities;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
@@ -24,11 +24,11 @@ namespace Domain.Ultils
             return claim;
         }
 
-        public static User GetUserFromToken(this ClaimsPrincipal claims)
+        public static UserResponseModel GetUserFromToken(this ClaimsPrincipal claims)
         {
             var jsonUser = claims.FindFirstValue(ClaimTypes.UserData);
 
-            var User = JsonSerializer.Deserialize<User>(jsonUser);
+            var User = JsonSerializer.Deserialize<UserResponseModel>(jsonUser);
             
             return User!;
         }

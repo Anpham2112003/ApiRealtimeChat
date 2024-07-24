@@ -35,31 +35,22 @@ namespace Application.Features.Conversation
         {
             try
             {
-                var UserId = _contextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.PrimarySid);
+               var UserId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
-                var conversation = await _unitOfWork.conversationRepository.GetInforConversation(UserId, request.Id!);
+               var result = await _unitOfWork.conversationRepository.RemoveConversation(request.Id!);
 
-                if (conversation is null) return Result<string>.Failuer(ConversationError.NotFound);
-
-                if (conversation.IsGroup == true)
+                if (result.DeletedCount == 0) return Result<string>.Failuer(new Error("", ""));
+                
+                var message = new Domain.Entities.Notification
                 {
-                    await _unitOfWork.groupRepository.LeaveGroup(request.Id!, UserId);
-                }
+                    Type = Domain.Enums.NotificationType.ConversationDelete,
 
-                await _unitOfWork.conversationRepository.RemoveConversation(conversation.Id!);
+                    Content = request.Id,
+                };
 
-                foreach (var item in conversation.Owners!)
-                {
-                    if (!item.ToString().Equals(UserId))
-                    {
-                        var message = new Domain.Entities.Notification
-                        {
-                            Type = Domain.Enums.NotificationType.ConversationDelete,
-                            Content = request.Id,
-                        };
-                        await _hubContext.Clients.Group(item.ToString()).Notification(message);
-                    }
-                }
+                await _hubContext.Clients.Group(UserId).Notification(message);
+                    
+                
                 return Result<string>.Success(request.Id);
             }
             catch (Exception)

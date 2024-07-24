@@ -1,5 +1,5 @@
 ﻿using Domain.Errors;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
@@ -11,13 +11,13 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Group
 {
-    public class GetMemberInGroupCommand:IRequest<Result<List<MembersGroupConvert>>>
+    public class GetMemberInGroupCommand:IRequest<Result<IEnumerable<MembersGroupResponseModel>>>
     {
         public string? Id { get; set; }
         public int Skip {  get; set; }
         public int Limit {  get; set; }
     }
-    public class HandGetMemberInGroupCommand : IRequestHandler<GetMemberInGroupCommand, Result<List<MembersGroupConvert>>>
+    public class HandGetMemberInGroupCommand : IRequestHandler<GetMemberInGroupCommand, Result<IEnumerable<MembersGroupResponseModel>>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -26,15 +26,15 @@ namespace Application.Features.Group
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Result<List<MembersGroupConvert>>> Handle(GetMemberInGroupCommand request, CancellationToken cancellationToken)
+        public async Task<Result<IEnumerable<MembersGroupResponseModel>>> Handle(GetMemberInGroupCommand request, CancellationToken cancellationToken)
         {
             try
             {
                 var result = await _unitOfWork.groupRepository.GetMembersInGroup(request.Id!, request.Skip, request.Limit);
 
-                if(result.Any()) return Result<List<MembersGroupConvert>>.Success(result);
+                if(result.Any()) return Result<IEnumerable<MembersGroupResponseModel>>.Success(result);
 
-                return Result<List<MembersGroupConvert>>.Failuer(GroupError.GroupNotFound);
+                return Result<IEnumerable<MembersGroupResponseModel>>.Failuer(GroupError.GroupNotFound);
             }
             catch (Exception)
             {

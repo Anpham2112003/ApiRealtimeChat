@@ -13,7 +13,7 @@ namespace Application.Validation.MessageValidation
         public ValidationMessage()
         {
             RuleFor(x=>x.Id)
-                .Null()
+                .NotNull()
                 .NotEmpty();
 
             RuleFor(x=>x.Content)

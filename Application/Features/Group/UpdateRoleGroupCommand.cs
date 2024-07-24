@@ -35,7 +35,7 @@ namespace Application.Features.Group
             {
                 var userId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
-                var getRoleUser = await _unitOfWork.groupRepository.GetMemberInGroup(request.GroupId!, userId);
+                var getRoleUser = await _unitOfWork.groupRepository.FindMemberInGroup(request.GroupId!, userId);
 
                 if (getRoleUser is null || !getRoleUser.Role.Equals(GroupRoles.Created)) 
                     return Result<string>.Failuer(new Error("Not Permisstion", ""));

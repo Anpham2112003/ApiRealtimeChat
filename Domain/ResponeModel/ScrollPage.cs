@@ -6,20 +6,20 @@ using System.Threading.Tasks;
 
 namespace Domain.ResponeModel
 {
-    public class PagingRespone<T>
+    public class ScrollPage<T> where T : class
     {
         public int Index { get; set; }
         public int Limit { get; set; }
-        public T? Data { get; set; }
+        public IEnumerable<T>? Data { get; set; }
 
-        public PagingRespone(int index, int limit, T? data=default)
+        public ScrollPage(int index, int limit, IEnumerable<T>? data)
         {
             Index = index;
             Limit = limit;
             Data = data;
         }
 
-        public PagingRespone()
+        public ScrollPage()
         {
         }
     }

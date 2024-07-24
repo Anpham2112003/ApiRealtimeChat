@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,5 +19,6 @@ namespace Infrastructure.Repository.BaseRepository
         public Task<UpdateResult> UpdateAsync(FilterDefinition<TCollection> filter, UpdateDefinition<TCollection> update);
         public Task FindOneAndUpdateAsync(FilterDefinition<TCollection> filter, BsonDocument elements);
         public Task<UpdateResult> UpdateAsync(FilterDefinition<TCollection> filter, UpdateDefinition<TCollection> update, UpdateOptions options);
+        public Task<bool> CheckExist(Expression<Func<TCollection, bool>> predicate);
     }
 }

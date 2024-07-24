@@ -40,18 +40,13 @@ namespace Application.Features.Friend
         {
             try
             {
-                var accountId = _contextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.PrimarySid);
+                var myId = _contextAccessor.HttpContext?.User.GetIdFromClaim();
 
-                var friend = await _unitOfWork.accountRepository.CheckAccountExist(request.FriendId!);
+                var hasFriend = await _unitOfWork.friendRepository.HasFriend(myId!, request.FriendId!);
 
-                if ( !friend) return Result<ObjectId>.Failuer(FriendError.DocumentNotFound);
+                if ( !hasFriend) return Result<ObjectId>.Failuer(new Error("Friend","Has not Friend"));
 
-                await  _unitOfWork.friendRepository
-                    .RemoveFriendAsync(accountId!,request.FriendId!);
-
-                await _unitOfWork.friendRepository
-                    .RemoveFriendAsync(request.FriendId!,accountId!);
-
+                await  _unitOfWork.friendRepository.RemoveFriendAsync(myId!,request.FriendId!);
 
                 return Result<ObjectId>.Success(ObjectId.Parse(request.FriendId));
 

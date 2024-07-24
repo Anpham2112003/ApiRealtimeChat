@@ -8,10 +8,14 @@ namespace Domain.Enums
 {
     public enum NotificationType
     {
-        Dev,
-        InviteFriend,
-        AppcectFriend,
-        NewConversation,
-        ConversationDelete
+        Dev=0,
+
+        InviteFriend=1,
+
+        AppcectFriend=2,
+
+        NewConversation=3,
+
+        ConversationDelete=4
     }
 }

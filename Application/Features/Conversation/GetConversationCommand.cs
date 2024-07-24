@@ -1,5 +1,5 @@
 ﻿using Domain.Entities;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
@@ -16,12 +16,12 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Conversation
 {
-    public class GetConversationCommand:IRequest<Result<ConversationConvert>>
+    public class GetConversationCommand:IRequest<Result<ConversationResponseModel>>
     {
         public string? Id {  get; set; }
     }
 
-    public class HandGetConversationSingleChatCommand : IRequestHandler<GetConversationCommand, Result<ConversationConvert>>
+    public class HandGetConversationSingleChatCommand : IRequestHandler<GetConversationCommand, Result<ConversationResponseModel>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor  _accessor;
@@ -33,7 +33,7 @@ namespace Application.Features.Conversation
             _hubContext = hubContext;
         }
 
-        public async Task<Result<ConversationConvert>> Handle(GetConversationCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ConversationResponseModel>> Handle(GetConversationCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -41,9 +41,9 @@ namespace Application.Features.Conversation
 
                 var UserId = _accessor.HttpContext!.User.GetIdFromClaim();
 
-                var checkUserExist = await _unitOfWork.accountRepository.CheckAccountExist(request.Id!);
+                var checkUserExist = await _unitOfWork.accountRepository.CheckExist(x=>x.Id==request.Id);
 
-                if (!checkUserExist) return Result<ConversationConvert>.Failuer(new Error("NotFound",""));
+                if (!checkUserExist) return Result<ConversationResponseModel>.Failuer(new Error("NotFound",""));
                 
                 var conversation = await _unitOfWork.conversationRepository.GetConversation(UserId, request.Id!);
                 
@@ -54,7 +54,7 @@ namespace Application.Features.Conversation
                         Id=ObjectId.GenerateNewId().ToString(),
                         Messages=new List<Domain.Entities.Message> { },
                         CreatedAt = DateTime.UtcNow,
-                        MessagePinds= new List<ObjectId> { },
+                        Pinds= new List<Domain.Entities.Message> { },
                         IsGroup = false,
                         Owners = new List<ObjectId>() {ObjectId.Parse(UserId),ObjectId.Parse(request.Id!) },
                         Seen=DateTime.UtcNow,
@@ -63,7 +63,7 @@ namespace Application.Features.Conversation
 
                   
                     
-                     await  _unitOfWork.conversationRepository.InsertAsync(newConversation);
+                    await  _unitOfWork.conversationRepository.InsertAsync(newConversation);
 
                     var notification = new Domain.Entities.Notification
                     {
@@ -74,10 +74,10 @@ namespace Application.Features.Conversation
 
                     await _hubContext.Clients.Groups(UserId,request.Id!).Notification(notification);
                     
-                    return Result<ConversationConvert>.Success(new ConversationConvert { Id=newConversation.Id});
+                    return Result<ConversationResponseModel>.Success(new ConversationResponseModel { Id=newConversation.Id});
                 }
 
-                return Result<ConversationConvert>.Success(conversation);
+                return Result<ConversationResponseModel>.Success(conversation);
             }
             catch (Exception)
             {

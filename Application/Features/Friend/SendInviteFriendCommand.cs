@@ -1,4 +1,5 @@
 ﻿using Application.Errors;
+using Domain.Entities;
 using Domain.Enums;
 using Domain.Ultils;
 using Infrastructure.Services.HubServices;
@@ -44,19 +45,22 @@ namespace Application.Features.Friend
 
                 var User = _contextAccessor.HttpContext!.Request.HttpContext.User.GetUserFromToken();
 
+                var checkAccount = await _unitOfWork.accountRepository.CheckExist(x => x.Id == request.Id);
 
-                var checkFriendAccount = await _unitOfWork.accountRepository.CheckAccountExist(request.Id!);
-
-                if ( !checkFriendAccount)
+                if ( !checkAccount || User.AccountId!.Equals(request.Id))
 
                 return Result<string>.Failuer(FriendError.DocumentNotFound);
+
+                var check = await _unitOfWork.friendRepository.HasInvitedOrFriend(request.Id!, User.AccountId!);
+
+                if (check) return Result<string>.Failuer(new Error("Exist!", ""));
 
                 await _unitOfWork.friendRepository.AddToWaitlistAsync( request.Id!,User.AccountId!) ;
 
                 var notification = new Domain.Entities.Notification()
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
-                    Content = $"{User.Name} Send a friend request to you!",
+                    Content = $"{User.FullName} Send a friend request to you!",
                     From = User.AccountId,
                     CreatedAt = DateTime.UtcNow,
                     Type = NotificationType.InviteFriend,

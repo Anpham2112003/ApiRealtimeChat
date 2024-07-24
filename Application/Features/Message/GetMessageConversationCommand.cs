@@ -12,13 +12,13 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Message
 {
-    public class GetMessageConversationCommand:IRequest<Result<PagingRespone<List<ClientMessageReceiver>>>>
+    public class GetMessageConversationCommand:IRequest<Result<ScrollPage<ClientMessageResponseModel>>>
     {
         public string? Id {  get; set; } 
         public int Skip {  get; set; }
         public int Limit {  get; set; }
     }
-    public class HandGetMessageConversationCommand : IRequestHandler<GetMessageConversationCommand, Result<PagingRespone<List<ClientMessageReceiver>>>>
+    public class HandGetMessageConversationCommand : IRequestHandler<GetMessageConversationCommand, Result<ScrollPage<ClientMessageResponseModel>>>
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -27,13 +27,13 @@ namespace Application.Features.Message
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Result<PagingRespone<List<ClientMessageReceiver>>>> Handle(GetMessageConversationCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ScrollPage<ClientMessageResponseModel>>> Handle(GetMessageConversationCommand request, CancellationToken cancellationToken)
         {
             var result = await _unitOfWork.messageRepository.GetMessagesAsync(request.Id!, request.Skip, request.Limit);
 
-            if (!result.Any()) return Result<PagingRespone<List<ClientMessageReceiver>>>.Failuer(ConversationError.NotFound);
+            if (!result.Any()) return Result<ScrollPage<ClientMessageResponseModel>>.Failuer(ConversationError.NotFound);
 
-            return Result<PagingRespone<List<ClientMessageReceiver>>>.Success(new PagingRespone<List<ClientMessageReceiver>>
+            return Result<ScrollPage<ClientMessageResponseModel>>.Success(new ScrollPage<ClientMessageResponseModel>
             {
                 Index = request.Skip,
                 Limit = request.Limit,

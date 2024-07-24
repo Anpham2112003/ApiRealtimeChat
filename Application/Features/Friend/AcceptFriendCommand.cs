@@ -44,30 +44,36 @@ namespace Application.Features.Friend
             {
                 var User = _contextAccessor.HttpContext?.User.GetUserFromToken();
 
-                var friend = await _unitOfWork.accountRepository.CheckAccountExist(request.Id!);
+                var friend = await _unitOfWork.accountRepository.CheckExist(x=>x.Id==request.Id);
 
                 if ( friend is false) return Result<Object>.Failuer(FriendError.DocumentNotFound);
 
                 var notificaton = new Domain.Entities.Notification
                 {
                      Id=ObjectId.GenerateNewId().ToString(),
-                     Content=$"{User!.Name} accepted the friend request!",
+                     Content=$"{User!.FullName} accepted the friend request!",
                      From=User.AccountId,
                      CreatedAt=DateTime.UtcNow,
                      Type=Domain.Enums.NotificationType.AppcectFriend
                 };
 
-                await _unitOfWork.friendRepository.AcceptFriend(User.AccountId!, request.Id!);
+                var hasInviteList = await _unitOfWork.friendRepository.HasInInviteList(User.AccountId!,request.Id!);
 
-                await _unitOfWork.friendRepository.AddFriendAsync(request.Id!, User!.AccountId!);
+                 
 
-                await _unitOfWork.notificationRepository.RemoveNotification(User.AccountId!,request.Id!,Domain.Enums.NotificationType.InviteFriend);
+                if (hasInviteList)
+                {
+                    var result = await _unitOfWork.friendRepository.AcceptFriend(User.AccountId!, request.Id!);
 
-                await _unitOfWork.notificationRepository.AddNotification(request.Id!,notificaton);
 
-                await _hubContext.Clients.Group(request.Id!).Notification(notificaton);
-             
-                return Result<Object>.Success();
+                    await _unitOfWork.notificationRepository.AddNotification(request.Id!, notificaton);
+
+                    await _hubContext.Clients.Group(request.Id!).Notification(notificaton);
+
+                    return Result<Object>.Success();
+                }
+
+                return Result<Object>.Failuer(new Error("Not in InviteList!", "Bad"));
             }
             catch (Exception)
             {

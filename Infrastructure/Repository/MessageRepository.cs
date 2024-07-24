@@ -1,6 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
-using Domain.ResponeModel.BsonConvert;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using Microsoft.VisualBasic;
@@ -24,7 +24,7 @@ namespace Infrastructure.Repository
             
         }
 
-        public async Task<List<ClientMessageReceiver>> GetMessagesAsync(string ConversationId,int skip,int limit)
+        public async Task<IEnumerable<ClientMessageResponseModel>> GetMessagesAsync(string ConversationId,int skip,int limit)
         {
 
 
@@ -84,7 +84,7 @@ namespace Infrastructure.Repository
                                                     "Avatar",1
                                                 },
                                                 {
-                                                    "FistName",1
+                                                    "FullName",1
                                                 },
                                                 {
                                                     "State",1
@@ -183,12 +183,13 @@ namespace Infrastructure.Repository
                         }
                     }
                 })
-                
-                .As<GetMessageConvert>().FirstOrDefaultAsync();
+                .Unwind("Messages")
+                .ReplaceRoot<BsonDocument>("$Messages")
+                .As<ClientMessageResponseModel>().ToListAsync();
 
 
            
-            return aggry.Messages!;
+            return aggry is null ? Enumerable.Empty<ClientMessageResponseModel>() : aggry;
         }
 
         public async Task<UpdateResult> SendMessageAsync(string Id,string UserId, Message message)
@@ -211,8 +212,6 @@ namespace Infrastructure.Repository
         public async Task<Domain.Entities.Message> FindMessage(string Id, string MessageId)
         {
             
-                
-            var project = Builders<ConversationCollection>.Projection.Include(x => x.Messages);
             var query = await _collection.Aggregate()
                 .Match(x => x.Id == Id)
                 .AppendStage<BsonDocument>(new BsonDocument
@@ -261,16 +260,26 @@ namespace Infrastructure.Repository
                 (
                     Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId),
                     Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(UserId)),
-                    Builders<ConversationCollection>.Filter.ElemMatch(x=>x.Messages,x=>x.Id==MessageId&& x.AccountId==UserId)
+                    Builders<ConversationCollection>.Filter.ElemMatch(x => x.Messages, x => x.Id == MessageId && x.AccountId == UserId)
                 );
 
             var update = Builders<ConversationCollection>.Update
                 .Set(x=>x.Messages.FirstMatchingElement().IsDelete,true)
-                .Set(x=>x.Messages.FirstMatchingElement().DeletedAt,DateTime.UtcNow);
+                .Set(x=>x.Messages.FirstMatchingElement().DeletedAt,DateTime.UtcNow)
+                .Set("Pinds.$[m].IsDelete",true)
+                .Set("Pinds.$[m].DeletedAt",DateTime.UtcNow);
 
-            
+            var arrayilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "m._id",ObjectId.Parse(MessageId)
+                    }
+                })
+            };
 
-            var result = await _collection!.UpdateOneAsync(filter, update );
+            var result = await _collection!.UpdateOneAsync(filter, update,new UpdateOptions { ArrayFilters=arrayilter} );
             
             return result;
         }
@@ -294,29 +303,27 @@ namespace Infrastructure.Repository
             return await _collection!.UpdateOneAsync(filter,update);
         }
 
-        public async Task<UpdateResult> PindMessage(string ConversationId, string messageId)
+        public async Task<UpdateResult> PindMessage(string ConversationId, Message message)
         {
             var filter = Builders<ConversationCollection>.Filter.Eq(x=>x.Id, ConversationId);
 
             var update = Builders<ConversationCollection>
-                .Update.AddToSet(x => x.MessagePinds, ObjectId.Parse(messageId));
+                .Update.AddToSet(x => x.Pinds, message);
 
             return await _collection!.UpdateOneAsync(filter, update);
         }
 
         public async Task<UpdateResult> UnPindMessage(string ConversationId,string UserId ,string MessageId)
         {
-            var filter = Builders<ConversationCollection>.Filter.And(
-                    Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId),
-                    Builders<ConversationCollection>.Filter.Eq("MessagePinds", ObjectId.Parse(MessageId)));
+            var filter =  Builders<ConversationCollection>.Filter.Eq(x => x.Id, ConversationId);
 
             var update = Builders<ConversationCollection>.Update
-                .Pull(x=>x.MessagePinds,ObjectId.Parse(MessageId));
+                .PullFilter(x => x.Pinds, Builders<Message>.Filter.Eq(x => x.Id, MessageId));
 
             return await _collection!.UpdateOneAsync(filter, update);
         }
 
-        public async Task<List<ClientMessageReceiver>> GetMessagesPind(string conversationid,string userid,int skip,int limit)
+        public async Task<IEnumerable<ClientMessageResponseModel>> GetMessagesPind(string conversationid,string userid,int skip,int limit)
         {
             var filter = Builders<ConversationCollection>.Filter.And(
                     Builders<ConversationCollection>.Filter.Eq(x => x.Id, conversationid),
@@ -328,57 +335,13 @@ namespace Infrastructure.Repository
                 .AppendStage<BsonDocument>(new BsonDocument
                 {
                     {
-                        "$addFields",new BsonDocument
-                        {
-                            
-                            {
-                                "filterMessage", new BsonDocument
-                                {
-                                    {
-                                        "$filter", new BsonDocument
-                                        {
-                                            {
-                                                "input","$Messages"
-                                            },
-                                            {
-                                                "as","item"
-                                            },
-                                           
-                                            {
-                                                "cond", new BsonDocument
-                                                {
-                                                    {
-                                                        "$in", new BsonArray
-                                                        {
-                                                            "$$item._id", new BsonDocument
-                                                            {
-                                                                {
-                                                                    "$slice", new BsonArray
-                                                                    {
-                                                                        "$MessagePinds",skip,limit
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }).AppendStage<BsonDocument>(new BsonDocument
-                {
-                    {
                         "$lookup", new BsonDocument
                         {
                             {
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","filterMessage.AccountId"
+                                "localField","Pinds.AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -403,9 +366,7 @@ namespace Infrastructure.Repository
                                                 {
                                                     "Avatar",1
                                                 },
-                                                {
-                                                    "Gender",1
-                                                },
+                                                
                                                 {
                                                     "State",1
                                                 }
@@ -423,13 +384,13 @@ namespace Infrastructure.Repository
                         "_id",0
                     },
                     {
-                        "MessagePinds", new BsonDocument
+                        "Pinds", new BsonDocument
                         {
                             {
                                 "$map", new BsonDocument
                                 {
                                     {
-                                        "input","$filterMessage"
+                                        "input","$Pinds"
                                     },
                                     {
                                         "as","item"
@@ -494,11 +455,14 @@ namespace Infrastructure.Repository
                             }
                         }
                     }
-                }).As<PindMessageConvert>().FirstOrDefaultAsync();
+                })
+                .Unwind("Pinds")
+                .ReplaceRoot<BsonDocument>("$Pinds")
+                .As<ClientMessageResponseModel>()
+                .ToListAsync();
 
-            if (result is null ) return new List<ClientMessageReceiver>();
 
-            return result.MessagePinds!;
+            return result is null ? Enumerable.Empty<ClientMessageResponseModel>() : result;
         }
     }
 }

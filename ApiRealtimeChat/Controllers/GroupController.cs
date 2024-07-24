@@ -85,15 +85,6 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess?Ok(result.Data):BadRequest(result.Error);
         }
 
-        [Authorize]
-        [HttpDelete("delete")]
-        public async Task<IActionResult> DeleteGroup(DeleteGroupCommand command)
-        {
-            var result = await _mediator.Send(command);
-
-            return result.IsSuccess?Ok("Ok!"):BadRequest(result.Error);
-        }
-
         
 
         
