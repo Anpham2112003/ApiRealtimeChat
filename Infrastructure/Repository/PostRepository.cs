@@ -46,7 +46,7 @@ namespace Infrastructure.Repository
 
 
             var update = Builders<PostCollection>.Update
-                .PullFilter(x => x.LatestPost, Builders<Post>.Filter.Eq(x => x.Id, PostId))
+                .PullFilter(x => x.LatestPosts, Builders<Post>.Filter.Eq(x => x.Id, PostId))
                 .PullFilter(x=>x.Posts, Builders<Post>.Filter.Eq(x=>x.Id,PostId));
            
 
@@ -59,7 +59,7 @@ namespace Infrastructure.Repository
 
             var update = Builders<PostCollection>.Update
                 .SetOnInsert(x=>x.CreatedAt,DateTime.UtcNow)
-                .Push(x=>x.LatestPost,post)
+                .Push(x=>x.LatestPosts,post)
                 .Push(x=>x.Posts, post);
    
           return   await _collection!.UpdateOneAsync(filter,update, new UpdateOptions { IsUpsert=true} );
@@ -69,13 +69,15 @@ namespace Infrastructure.Repository
 
         public async Task<UpdateResult> LikePost(string MyId,string AccountId,string PostId)
         {
-            var filter = Builders<PostCollection>.Filter.Eq(x=>x.AccountId, AccountId);
+
+            var filter = Builders<PostCollection>.Filter.Eq(x => x.AccountId, AccountId);
+
 
             var update = Builders<PostCollection>.Update
-                                .Inc("Posts.$[p].Like",1)
-                                .Push("Post.$[p].ListIdLike",ObjectId.Parse(MyId))
+                                .Inc("Posts.$[p].Likes",1)
+                                .AddToSet("Posts.$[p].ListLike",ObjectId.Parse(MyId))
                                 .Inc("LatestPosts.$[p].Likes",1)
-                                .Push("LatestPosts.$[p].ListLike", ObjectId.Parse(MyId));
+                                .AddToSet("LatestPosts.$[p].ListLike", ObjectId.Parse(MyId));
 
             var arrayFilter = new[]
             {
@@ -97,8 +99,8 @@ namespace Infrastructure.Repository
             var filter = Builders<PostCollection>.Filter.Eq(x => x.AccountId, AccountId);
 
             var update = Builders<PostCollection>.Update
-                                .Inc("LatestPost.$[p].Likes", -1)
-                                .Pull("LatestPost.$[p].ListLike", ObjectId.Parse(MyId))
+                                .Inc("LatestPosts.$[p].Likes", -1)
+                                .Pull("LatestPosts.$[p].ListLike", ObjectId.Parse(MyId))
                                 .Inc("Posts.$[p].Likes", -1)
                                 .Pull("Posts.$[p].ListLike", ObjectId.Parse(MyId));
 
@@ -147,42 +149,7 @@ namespace Infrastructure.Repository
 
                                                     },
                                                     {
-                                                        "LatestPost",new BsonDocument
-                                                        {
-                                                            {
-                                                                "$filter", new BsonDocument
-                                                                {
-                                                                    {
-                                                                        "input","$LatestPost"
-                                                                    },
-                                                                    {
-                                                                        "as","item"
-                                                                    },
-                                                                    {
-                                                                        "cond", new BsonDocument
-                                                                        {
-                                                                            {
-                                                                                "$cond", new BsonArray
-                                                                                {
-                                                                                    new BsonDocument
-                                                                                    {
-                                                                                        {
-                                                                                            "$eq", new BsonArray
-                                                                                            {
-                                                                                                "$$item._id",BsonNull.Value
-                                                                                            }
-                                                                                        }
-                                                                                    },
-                                                                                    "$$REMOVE",
-                                                                                    "$$item"
-                                                                                    
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
+                                                        "LatestPosts",1
                                                     }
                                                 }
                                             }
@@ -190,7 +157,7 @@ namespace Infrastructure.Repository
                                         new BsonDocument
                                         {
                                             {
-                                                "$unwind","$LatestPost"
+                                                "$unwind","$LatestPosts"
                                             }
                                         },
                                         new BsonDocument
@@ -199,11 +166,13 @@ namespace Infrastructure.Repository
                                                 "$replaceRoot", new BsonDocument
                                                 {
                                                     {
-                                                        "newRoot","$LatestPost"
+                                                        "newRoot","$LatestPosts"
                                                     }
                                                 }
                                             }
                                         },
+
+                                       
 
                                         new BsonDocument
                                         {
@@ -217,7 +186,238 @@ namespace Infrastructure.Repository
                                             {
                                                 "$limit",take
                                             }
+                                        },
+                                        new BsonDocument
+                                        {
+                                           {
+                                               "$project",new BsonDocument
+                                               {
+                                                   {
+                                                       "_id",1
+                                                   },
+                                                   {
+                                                       "ListLike",1
+                                                   },
+
+                                                   {
+                                                       "AccountId",1
+                                                   },
+                                                   {
+                                                       "Content",1
+                                                   },
+                                                   {
+                                                       "Images",1
+                                                   },
+                                                   {
+                                                        "TotalComment",1
+                                                   },
+                                                   {
+                                                        "AllowComment",1
+                                                   },
+                                                    {
+                                                        "HiddenComment",1
+                                                    },
+                                                   {
+                                                       "CreatedAt",1
+                                                   },
+                                                   {
+                                                       "UpdatedAt",1
+                                                   },
+                                                   {
+                                                       "Comments",new BsonDocument
+                                                       {
+                                                           {
+                                                               "$cond",new BsonArray
+                                                               {
+                                                                   new BsonDocument
+                                                                   {
+                                                                       {
+                                                                           "$eq",new BsonArray
+                                                                           {
+                                                                               "$HiddenComment",false
+                                                                           }
+                                                                       }
+                                                                   },
+
+                                                                   new BsonDocument
+                                                                   {
+                                                                       {
+                                                                           "$filter",new BsonDocument
+                                                                           {
+                                                                               {
+                                                                                   "input","$Comments"
+                                                                               },
+                                                                               {
+                                                                                   "as","item"
+                                                                               },
+                                                                               {
+                                                                                   "cond",new BsonDocument
+                                                                                   {
+                                                                                       {
+                                                                                           "$eq",new BsonArray
+                                                                                           {
+                                                                                               "$$item.ParentId",BsonNull.Value
+                                                                                           }
+                                                                                       }
+                                                                                   }
+                                                                               },
+                                                                               {
+                                                                                   "limit",5
+                                                                               }
+                                                                           }
+                                                                       }
+                                                                   },
+
+                                                                   BsonNull.Value
+                                                               }
+                                                           }
+                                                           
+                                                       }
+                                                   }
+                                               }
+                                           }
+                                        },
+
+                                        new BsonDocument
+                                        {
+                                            {
+                                                "$lookup",new BsonDocument
+                                                {
+                                                    {
+                                                        "from",nameof(UserCollection)
+                                                    },
+                                                    {
+                                                        "localField","Comments.AccountId"
+                                                    },
+                                                    {
+                                                        "foreignField","AccountId"
+                                                    },
+                                                    {
+                                                        "pipeline",new BsonArray
+                                                        {
+                                                            new BsonDocument
+                                                            {
+                                                                {
+                                                                    "$project",new BsonDocument
+                                                                    {
+                                                                        {
+                                                                            "_id",0
+                                                                        },
+                                                                        {
+                                                                            "AccountId",1
+                                                                        },
+                                                                        {
+                                                                            "FullName",1
+                                                                        },
+                                                                        {
+                                                                            "Avatar",1
+                                                                        },
+                                                                        {
+                                                                            "State",1
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "as","Match"
+                                                    }
+                                                }
+                                            }
+                                        },
+
+                                        new BsonDocument
+                                        {
+                                            {
+                                                "$project",new BsonDocument
+                                                {
+                                                   {
+                                                       "_id",1
+                                                   },
+                                                   {
+                                                       "ListLike",1
+                                                   },
+
+                                                   {
+                                                       "AccountId",1
+                                                   },
+                                                   {
+                                                       "Content",1
+                                                   },
+                                                   {
+                                                       "Images",1
+                                                   },
+                                                   {
+                                                        "TotalComment",1
+                                                   },
+                                                   {
+                                                        "AllowComment",1
+                                                   },
+                                                    {
+                                                        "HiddenComment",1
+                                                    },
+                                                   {
+                                                       "CreatedAt",1
+                                                   },
+                                                   {
+                                                       "UpdatedAt",1
+                                                   },
+                                                    {
+                                                        "Comments",new BsonDocument
+                                                        {
+                                                            {
+                                                                "$map",new BsonDocument
+                                                                {
+                                                                    {
+                                                                        "input","$Comments"
+                                                                    },
+                                                                    {
+                                                                        "as","item"
+                                                                    },
+                                                                    {
+                                                                        "in",new BsonDocument
+                                                                        {
+                                                                            {
+                                                                                "$mergeObjects",new BsonArray
+                                                                                {
+                                                                                    "$$item",
+                                                                                    new BsonDocument
+                                                                                    {
+                                                                                        {
+                                                                                            "$arrayElemAt",new BsonArray
+                                                                                            {
+                                                                                                "$Match",new BsonDocument
+                                                                                                {
+                                                                                                    {
+                                                                                                        "$indexOfArray",new BsonArray
+                                                                                                        {
+                                                                                                            "$Match.AccountId","$$item.AccountId"
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                   
+                                                }
+                                            }
                                         }
+                                        ,new BsonDocument
+                                        {
+                                            {
+                                                "$unset","Match"
+                                            }
+                                        }
+                                        
 
                                     }
                                 },
@@ -333,7 +533,7 @@ namespace Infrastructure.Repository
                                                                         "$in", new BsonArray
                                                                         {
                                                                             ObjectId.Parse(AccountId),
-                                                                            "$$item.ListIdLike"
+                                                                            "$$item.ListLike"
                                                                         }
                                                                     }
                                                                 }
@@ -353,7 +553,7 @@ namespace Infrastructure.Repository
                     .AppendStage<BsonDocument>(new BsonDocument
                     {
                         {
-                            "$unset","ListIdLike"
+                            "$unset","ListLike"
                         }
                     })
                     .As<PostResponseModel>().SortByDescending(x=>x.CreatedAt).ToListAsync();
@@ -506,6 +706,237 @@ namespace Infrastructure.Repository
                 })
                 .Unwind("Posts")
                 .ReplaceRoot<BsonDocument>("$Posts")
+                .Project(new BsonDocument
+                {
+                    {
+                        "_id",1
+                    },
+
+                    {
+                       "ListLike",1
+                    },
+
+                    {
+                        "AccountId",1
+                    },
+
+                    {
+                         "Content",1
+                    },
+                    {
+                          "Images",1
+                    },
+
+                    {
+                          "TotalComment",1
+                    },
+
+                      {
+                        "AllowComment",1
+                      },
+
+                     {
+                         "HiddenComment",1
+                     },
+
+                       {
+                            "CreatedAt",1
+                       },
+
+                      {
+                            "UpdatedAt",1
+                      },
+
+
+                    {
+                        "Comments",new BsonDocument
+                        {
+                            {
+                                "$cond",new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$eq",new BsonArray
+                                            {
+                                                "$HiddenComment",false
+                                            }
+                                        }
+                                    },
+
+
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$filter",new BsonDocument
+                                            {
+                                                {
+                                                    "input","$Comments"
+                                                },
+                                                {
+                                                    "as","item"
+                                                },
+                                                 {
+                                                     "cond",new BsonDocument
+                                                     {
+                                                        {
+                                                            "$eq",new BsonArray
+                                                            {
+                                                                "$$item.ParentId",BsonNull.Value
+                                                            }
+                                                        }
+                                                     }
+
+                                                 },
+
+                                                {
+                                                    "limit",5
+                                                }
+                                            }
+                                        }
+                                    },
+
+                                    BsonNull.Value
+                                }
+                            }
+                        }
+                    }
+                })
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup",new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","Comments.AccountId"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline",new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project", new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Match"
+                            }
+                        }
+                    }
+                })
+                .Project<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "_id",1
+                    },
+
+                    {
+                       "ListLike",1
+                    },
+
+                    {
+                        "AccountId",1
+                    },
+
+                    {
+                         "Content",1
+                    },
+                    {
+                          "Images",1
+                    },
+
+                    {
+                          "TotalComment",1
+                    },
+
+                      {
+                        "AllowComment",1
+                      },
+
+                     {
+                         "HiddenComment",1
+                     },
+
+                       {
+                            "CreatedAt",1
+                       },
+
+                      {
+                            "UpdatedAt",1
+                      },
+
+                    {
+                        "Comments",new BsonDocument
+                        {
+                            {
+                                "$map",new BsonDocument
+                                {
+                                    {
+                                        "input","$Comments"
+                                    },
+                                    {
+                                        "as","item"
+                                    },
+                                    {
+                                        "in",new BsonDocument
+                                        {
+                                            {
+                                                "$mergeObjects",new BsonArray
+                                                {
+                                                    "$$item",
+                                                    new BsonDocument
+                                                    {
+                                                        {
+                                                            "$arrayElemAt",new BsonArray
+                                                            {
+                                                                "$Match",
+                                                                new BsonDocument
+                                                                {
+                                                                    {
+                                                                        "$indexOfArray",new BsonArray
+                                                                        {
+                                                                            "$Match.AccountId","$$item.AccountId"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
                 .AppendStage<BsonDocument>(new BsonDocument
                 {
                     {
@@ -554,6 +985,7 @@ namespace Infrastructure.Repository
                         }
                     }
                 })
+                
                 .AppendStage<BsonDocument>(new BsonDocument
                 {
                     {
@@ -585,12 +1017,18 @@ namespace Infrastructure.Repository
                 {
                     {
                         "Users",0
+                    },
+                    {
+                        "Match",0
+                    },
+                    {
+                        "ListLike",0
                     }
-                }).ToListAsync();
+                }).As<PostResponseModel>().ToListAsync();
 
             Debug.WriteLine(aggry);
 
-            return aggry is null ? Enumerable.Empty<PostResponseModel>() : Enumerable.Empty<PostResponseModel>();
+            return aggry is null ? Enumerable.Empty<PostResponseModel>() : aggry;
         }
 
       

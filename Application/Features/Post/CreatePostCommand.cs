@@ -46,25 +46,18 @@ namespace Application.Features.Post
                     AccountId=AccountId,
                     Images = fileNames,
                     Likes = 0,
+                    AllowComment=true,
+                    TotalComment=0,
+                    HiddenComment=false,
+                    Comments=new List<Comment> { },
                     ListLike = new List<ObjectId> { },
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                 };
 
-                var commentCollection = new CommentCollection
-                {
-                    Id = ObjectId.GenerateNewId().ToString(),
-                    PostId = Post.Id,
-                    AllowComment = true,
-                    CreatedAt = DateTime.UtcNow,
-                    Comments = new List<Comment> { },
-                    TotalComment = 0,
-                    UpdatedAt = DateTime.UtcNow,
-                };
 
                 await _unitOfWork.postRepository.InsertPost(AccountId, Post);
 
-                await _unitOfWork.commentRepository.InsertAsync(commentCollection);
                 
 
                 return Result<Domain.Entities.Post>.Success(Post);

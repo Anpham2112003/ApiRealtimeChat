@@ -14,7 +14,6 @@ namespace Application.Features.Post
     {
         public string? AccountId {  get; set; }
         public string? PostId {  get; set; }
-        public int PageId {  get; set; }
 
         public int Skip {  get; set; }
         public int Limit { get; set; }

@@ -14,6 +14,7 @@ namespace Application.Features.Coment
 {
     public class RepCommentPostCommand:IRequest<Result<Comment>>
     {
+        public string? AccountId { get; set; }
         public string? PostId { get; set; }
         public string? RepId {  get; set; }
         public string? Content { get; set; }
@@ -48,7 +49,7 @@ namespace Application.Features.Coment
                     CreatedAt = DateTime.UtcNow,
                 };
 
-                var result = await _unitOfWork.commentRepository.RepComment(request.PostId!, request.RepId!, comment);
+                var result = await _unitOfWork.commentRepository.RepComment(request.AccountId!,request.PostId!, request.RepId!, comment);
 
                 if (result.MatchedCount == 0) return Result<Comment>.Failuer(new Error("Comment is block", ""));
 

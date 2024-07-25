@@ -32,13 +32,12 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [HttpGet("post/likes")]
-        public async Task<IActionResult> GetListLike([FromQuery]string AccountId, int PageId,string PostId,int Skip,int Limit)
+        public async Task<IActionResult> GetListLike([FromQuery]string AccountId,string PostId,int Skip,int Limit)
         {
             var result = await _mediator.Send(new GetListUserLike
             {
                 AccountId = AccountId,
                 PostId = PostId,
-                PageId = PageId,
                 Skip = Skip,
                 Limit = Limit
             });

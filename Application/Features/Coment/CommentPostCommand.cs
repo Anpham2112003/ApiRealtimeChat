@@ -14,6 +14,7 @@ namespace Application.Features.Coment
 {
     public class CommentPostCommand:IRequest<Result<Comment>>
     {
+        public string? AccountId { get; set; }
         public string? PostId {  get; set; }
         public  string? Content {  get; set; }
         public IFormFile? File { get; set; }
@@ -48,13 +49,14 @@ namespace Application.Features.Coment
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
                     AccountId = AccountId,
+                    PostId=request.PostId,
                     Content = request.Content,
                     ImageUrl = filename,
                     TotalChildComment = 0,
                     CreatedAt = DateTime.UtcNow,
                 };
 
-                var result = await _unitOfWork.commentRepository.PushComment(request.PostId!, comment);
+                var result = await _unitOfWork.commentRepository.PushComment(request.AccountId!,request.PostId!, comment);
 
                 if (result.MatchedCount == 0) return Result<Comment>.Failuer(new Error("Comment", "Comment was block"));
 

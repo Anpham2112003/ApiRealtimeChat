@@ -16,7 +16,7 @@ namespace Domain.Entities
         public string? AccountId {  get; set; }
         public int TotalPage {  get; set; }
         public List<Post>? Posts { get; set; }
-        public List<Post>? LatestPost {  get; set; }
+        public List<Post>? LatestPosts {  get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

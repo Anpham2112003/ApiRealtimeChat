@@ -1,8 +1,10 @@
 ﻿using Domain.Entities;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,51 +13,92 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Repository
 {
-    public class CommentRepository : AbstractRepository<CommentCollection>, ICommentRepository
+    public class CommentRepository : AbstractRepository<PostCollection>, ICommentRepository
     {
         public CommentRepository(IMongoDB mongoDB) : base(mongoDB)
         {
-            _collection=mongoDB.GetCollection<CommentCollection>(nameof(CommentCollection));    
+            _collection=mongoDB.GetCollection<PostCollection>(nameof(PostCollection));    
         }
 
-        public async Task RemoveCommentCollection(string PostId)
+        public async Task<UpdateResult> PushComment(string AccountId, string PostId, Comment comment)
         {
-            var filter = Builders<CommentCollection>.Filter.Eq(x=>x.PostId,PostId);
+            var builder = Builders<PostCollection>.Filter;
 
-            await _collection!.DeleteOneAsync(filter);
-        }
+            var filter = Builders<PostCollection>.Filter.And(
+                    builder.Eq(x => x.AccountId, AccountId),
 
-        public async Task<UpdateResult> PushComment(string PostId,Comment comment)
-        {
-            var filter = Builders<CommentCollection>.Filter.And(
-                    Builders<CommentCollection>.Filter.Eq(x => x.PostId, PostId),
-                    Builders<CommentCollection>.Filter.Eq(x => x.AllowComment, true)
+                    builder.ElemMatch(x => x.Posts,
+
+                          Builders<Post>.Filter.And(
+                            Builders<Post>.Filter.Eq(x=>x.Id, PostId),
+                            Builders<Post>.Filter.Eq(x=>x.AllowComment,true)
+                          )
+                    )
             );
 
-            var update = Builders<CommentCollection>.Update
-                .Inc(x=>x.TotalComment,1)
-                .Push(x => x.Comments, comment);
-
-            return await _collection!.UpdateOneAsync(filter, update);
-        }
-
-        public async Task<UpdateResult> RepComment(string PostId,string ParentId,Comment comment)
-        {
-            var filter = Builders<CommentCollection>.Filter.And(
-                    Builders<CommentCollection>.Filter.Eq(x => x.PostId, PostId),
-                    Builders<CommentCollection>.Filter.Eq(x=>x.AllowComment,true),
-                    Builders<CommentCollection>.Filter.Eq("Comments._id", ObjectId.Parse(ParentId))
-            );
-            var update = Builders<CommentCollection>.Update
-                .Inc("Comments.$[m].TotalChildComment",1)
-                .Push(x=>x.Comments, comment);
+            var update = Builders<PostCollection>.Update
+                .Inc("LatestPosts.$[p].TotalComment",1)
+                .Push("LatestPosts.$[p].Comments",comment)
+                .Inc(x=>x.Posts.FirstMatchingElement().TotalComment,1)
+                .Push(x => x.Posts.FirstMatchingElement().Comments, comment);
 
             var arrayFilter = new[]
             {
                 new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
                 {
                     {
-                        "m._id",ObjectId.Parse(ParentId)
+                        "p._id",ObjectId.Parse(PostId)
+                    }
+                })
+            };
+
+            return await _collection!.UpdateOneAsync(filter,update, new UpdateOptions { ArrayFilters=arrayFilter});
+        }
+
+        public async Task<UpdateResult> RepComment(string AccountId, string PostId, string ParentId, Comment comment)
+        {
+            var builder = Builders<PostCollection>.Filter;
+
+            var filter = Builders<PostCollection>.Filter.And(
+                    builder.Eq(x=>x.AccountId,AccountId),
+
+                    builder.ElemMatch(x => x.Posts,Builders<Post>.Filter.And(
+                            Builders<Post>.Filter.Eq(x=>x.Id,PostId),
+                            Builders<Post>.Filter.Eq(x=>x.AllowComment,true)
+                    ))
+            );
+
+            var update = Builders<PostCollection>.Update
+                .Push("Posts.$[p].Comments", comment);
+
+            var arrayFilter = new[]
+             {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
+                    }
+                })
+            };
+
+            return await _collection!.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilter });
+        }
+
+        public async Task<UpdateResult> BlockComment(string AccountId,string PostId)
+        {
+            
+            var filter = Builders<PostCollection>.Filter.Eq(x=>x.AccountId, AccountId);
+
+            var update = Builders<PostCollection>.Update
+                .Set("LatestPosts.$[p].AllowComment", false)
+                .Set("Posts.$[p].AllowComment", false);
+
+            var arrayFilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
                     }
                 })
             };
@@ -63,52 +106,71 @@ namespace Infrastructure.Repository
             return await _collection!.UpdateOneAsync(filter,update,new UpdateOptions { ArrayFilters=arrayFilter});
         }
 
-        public async Task<CommentCollection> GetCommandPost(string PostId,int skip,int limit)
-        {
-            var result = _collection.Aggregate()
-                        .Match(x=>x.PostId==PostId)
-                        .AppendStage<BsonDocument>(new BsonDocument
-                        {
-                            {
-                                "$addFields",new BsonDocument
-                                {
-                                    {
-                                        "filterComment",new BsonDocument
-                                        {
-                                            {
-                                                "$filter",new BsonDocument
-                                                {
-                                                    {
-                                                        "input","$Comments"
-                                                    },
-                                                    {
-                                                        "as","item"
-                                                    },
-                                                    {
-                                                        "cond",new BsonDocument
-                                                        {
-                                                            {
-                                                                "$eq",new BsonArray
-                                                                {
-                                                                    "$$item.ParentId",BsonNull.Value
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            {
-                                                "$skip",skip
-                                            },
-                                            {
-                                                "$limit",limit
-                                            }
-                                        }
 
-                                    }
-                                }
-                            }
-                        })
+        public async Task<UpdateResult> UnBlockComment(string AccountId, string PostId)
+        {
+
+            var filter = Builders<PostCollection>.Filter.Eq(x => x.AccountId, AccountId);
+
+            var update = Builders<PostCollection>.Update
+                .Set("LatestPosts.$[p].AllowComment", true)
+                .Set("Posts.$[p].AllowComment", true);
+
+            var arrayFilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
+                    }
+                })
+            };
+
+            return await _collection!.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilter });
+        }
+
+        public async Task<UpdateResult> HiddenComment(string AccountId, string PostId)
+        {
+
+            var filter = Builders<PostCollection>.Filter.Eq(x => x.AccountId, AccountId);
+
+            var update = Builders<PostCollection>.Update
+                .Set("LatestPosts.$[p].HiddenComment", true)
+                .Set("Posts.$[p].HiddenComment", true);
+
+            var arrayFilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
+                    }
+                })
+            };
+
+            return await _collection!.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilter });
+        }
+
+        public async Task<UpdateResult> UnHiddenComment(string AccountId, string PostId)
+        {
+
+            var filter = Builders<PostCollection>.Filter.Eq(x => x.AccountId, AccountId);
+
+            var update = Builders<PostCollection>.Update
+                .Set("LatestPosts.$[p].HiddenComment", false)
+                .Set("Posts.$[p].HiddenComment",false);
+
+            var arrayFilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
+                    }
+                })
+            };
+
+            return await _collection!.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilter });
         }
     }
 }

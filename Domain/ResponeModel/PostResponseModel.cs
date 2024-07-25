@@ -19,8 +19,11 @@ namespace Domain.ResponeModel
         public string? FullName {  get; set; }
         public string? Avatar {  get; set; }
         public UserState State { get; set; }
-        public int PageId { get; set; }
         public string? Content { get; set; }
+        public List<CommentResponseModel>? Comments { get; set; }
+        public bool AllowComment {  get; set; }
+        public bool HiddenComment {  get; set; }
+        public int TotalComment { get; set; }
         public int Likes { get; set; }
         public bool Liked { get; set; }
         public List<string>? Images { get; set; }

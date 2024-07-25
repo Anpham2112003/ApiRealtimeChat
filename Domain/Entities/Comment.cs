@@ -16,6 +16,9 @@ namespace Domain.Entities
         public string? AccountId {  get; set; }
 
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+        public string? PostId {  get; set; }
+
+        [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
         public  string? ParentId {  get; set; }
         public string? Content {  get; set; }
         public string? ImageUrl{ get; set; }

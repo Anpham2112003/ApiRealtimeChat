@@ -1,5 +1,4 @@
-﻿using Domain.Entities;
-using Domain.Ultils;
+﻿using Domain.Ultils;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -9,43 +8,42 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Features.Post
+namespace Application.Features.Coment
 {
-    public class RemovePostCommand:IRequest<Result<string>>
+    public class UnHiddenCommentCommand:IRequest<Result<string>>
     {
         public string? PostId {  get; set; }
     }
 
-    public class HandRemovePostCommand : IRequestHandler<RemovePostCommand, Result<string>>
+    public class HandUnHiddenCommentCommand : IRequestHandler<UnHiddenCommentCommand, Result<string>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
-        public HandRemovePostCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor)
+
+        public HandUnHiddenCommentCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor)
         {
             _unitOfWork = unitOfWork;
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<Result<string>> Handle(RemovePostCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(UnHiddenCommentCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                
                 var AccountId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
-                var result =  await _unitOfWork.postRepository.RemovePost(AccountId,request.PostId! );
+                var result = await _unitOfWork.commentRepository.UnHiddenComment(AccountId, request.PostId!);
 
-                if (result.ModifiedCount == 0) return Result<string>.Failuer(new Error("Not found",""));
+                if (result.ModifiedCount == 0) return Result<string>.Failuer(new Error("", ""));
 
-               
                 return Result<string>.Success("Ok!");
+
             }
             catch (Exception)
             {
 
                 throw;
             }
-            
         }
     }
 }
