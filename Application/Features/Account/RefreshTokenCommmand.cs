@@ -74,10 +74,12 @@ namespace Application.Features.Account
                     {
                         new Claim(ClaimTypes.Email,Cache[0].ToString()!),
                         new Claim(ClaimTypes.PrimarySid,userId),
-                        new Claim(ClaimTypes.UserData,jsonUser)
+                        new Claim(ClaimTypes.UserData,jsonUser),
+                        new Claim(ClaimTypes.NameIdentifier,userId)
                     };
 
                     var accesstoken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!,newClaims,DateTime.UtcNow.AddMinutes(1));
+
                     var refreshtoken = JwtLibrary.GenerateToken(_options.CurrentValue.ReFreshKey!, newClaims, DateTime.UtcNow.AddDays(7));
 
                     await _redisService.SetHashValueToRedis(userId, new HashEntry[] { new HashEntry("ReFreshToken", refreshtoken) });
@@ -101,7 +103,8 @@ namespace Application.Features.Account
                     {
                         new Claim(ClaimTypes.Email,email),
                         new Claim(ClaimTypes.PrimarySid,userId),
-                        new Claim(ClaimTypes.UserData,jsonUser)
+                        new Claim(ClaimTypes.UserData,jsonUser),
+                        new Claim(ClaimTypes.NameIdentifier,userId),
                     };
 
                    

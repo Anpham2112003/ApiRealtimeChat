@@ -37,9 +37,9 @@ namespace Application.Features.Conversation
             {
                var UserId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
-               var result = await _unitOfWork.conversationRepository.RemoveConversation(request.Id!);
+               var result = await _unitOfWork.conversationRepository.RemoveConversation(request.Id!,UserId);
 
-                if (result.DeletedCount == 0) return Result<string>.Failuer(new Error("", ""));
+                if (result.ModifiedCount == 0) return Result<string>.Failuer(new Error("", ""));
                 
                 var message = new Domain.Entities.Notification
                 {
@@ -48,7 +48,7 @@ namespace Application.Features.Conversation
                     Content = request.Id,
                 };
 
-                await _hubContext.Clients.Group(UserId).Notification(message);
+                await _hubContext.Clients.User(UserId).Notification(message);
                     
                 
                 return Result<string>.Success(request.Id);

@@ -43,6 +43,7 @@ namespace Infrastructure.Services.HubServices
                     {
 
                         await Groups.AddToGroupAsync(Context.ConnectionId, item);
+
                     }
                 }
             }
@@ -74,19 +75,7 @@ namespace Infrastructure.Services.HubServices
        }
         
 
-        private async Task JoinNotification(string id)
-        {
-            try
-            {
-                await Groups.AddToGroupAsync( Context.ConnectionId,id);
-                
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
+     
 
         public async Task LeaveGroup(string id)
         {
@@ -108,9 +97,7 @@ namespace Infrastructure.Services.HubServices
 
             await JoinGroups(ids!);
 
-            await JoinNotification(UserId);
-            
-            await Clients.Client(Context.ConnectionId).Notification( "Connected success!");
+            await Clients.Client(Context.ConnectionId).Connection("Connected ",0);
 
             await base.OnConnectedAsync();
         }
@@ -123,7 +110,7 @@ namespace Infrastructure.Services.HubServices
 
             await _redisService.SetHashValueToRedis(UserId, new HashEntry[] { new HashEntry("State", "1") });
 
-            await Clients.Client(Context.ConnectionId).Notification("DisConnection");
+            await Clients.Client(Context.ConnectionId).Connection("Disconnected",1);
 
             await base.OnDisconnectedAsync(exception);
         }

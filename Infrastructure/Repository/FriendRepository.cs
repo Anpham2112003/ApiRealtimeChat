@@ -40,9 +40,9 @@ namespace Infrastructure.Repository
 
                     new UpdateOneModel<FriendCollection>(
 
-                
+
                          Builders<FriendCollection>.Filter.Eq(x => x.AccountId, AccountId),
-                
+
 
                         Builders<FriendCollection>
                             .Update.Push(x => x.Friends, new Friend(FriendId))
@@ -56,21 +56,21 @@ namespace Infrastructure.Repository
 
             new UpdateOneModel<FriendCollection>(
 
-                  
+
                    Builders<FriendCollection>.Filter.Eq(x => x.AccountId, FriendId),
-                
+
                    Builders<FriendCollection>
                                     .Update.Push(x=>x.Friends,new Friend(AccountId))
 
-            )  { IsUpsert= true }
+            )  { IsUpsert= true },
+
+
             };
           
 
             return await _collection!.BulkWriteAsync(writeModel);
             
         }
-
-        
 
         public async Task RemoveFriendAsync(string AccountId, string FriendId)
         {

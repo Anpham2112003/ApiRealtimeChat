@@ -74,7 +74,7 @@ namespace Application.Features.Message
 
                 };
 
-                    await _hub.Clients.Group(request.Id!).ReceiveMessage(request.Id!, new object[] { messageReceiver });
+                    await _hub.Clients.Group(request.Id!).ReceiveMessage (request.Id!, new object[] { messageReceiver });
 
                     return Result<string>.Success("Ok");
                 

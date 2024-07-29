@@ -65,7 +65,7 @@ namespace Application.Features.Friend
                     CreatedAt = DateTime.UtcNow,
                     Type = NotificationType.InviteFriend,
                 };
-                await _hubContext.Clients.Group(request.Id!).Notification(notification);
+                await _hubContext.Clients.User(request.Id!).Notification(notification);
 
                 await _unitOfWork.notificationRepository.AddNotification(request.Id!, notification);
 

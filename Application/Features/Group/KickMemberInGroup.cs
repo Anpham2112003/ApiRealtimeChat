@@ -55,7 +55,7 @@ namespace Application.Features.Group
                         Content = request.Id
                     };
 
-                    await _hubContext.Clients.Group(request.MemberId!).Notification(notification);
+                    await _hubContext.Clients.User(request.MemberId!).Notification(notification);
 
                     return Result<string>.Success("Ok!");
                 }

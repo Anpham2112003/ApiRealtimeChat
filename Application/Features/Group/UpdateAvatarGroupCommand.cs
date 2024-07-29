@@ -43,17 +43,9 @@ namespace Application.Features.Group
             {
                 var User = _contextAccessor.HttpContext!.User.GetUserFromToken();
 
-                StringBuilder urlBildder = new StringBuilder();
+                var urlBildder = GenerateRandomFileName.GenerateFromFile(request.File!);
 
-                urlBildder
-                  .Append("GroupAvatar")
-                  .Append(request.Id)
-                  .Append(request.File!.FileName)
-                  .Append(Random.Shared.Next(100000000))
-                  .Append(Path.GetExtension(request.File.FileName));
-
-
-                await _awsServices.UploadFileAsync(configuration["Aws:Bucket"]!, urlBildder.ToString(), request.File);
+                await _awsServices.UploadFileAsync(configuration["Aws:Bucket"]!, urlBildder.ToString(), request.File!);
 
                 var url = configuration["Aws:Perfix"] + urlBildder.ToString();
 

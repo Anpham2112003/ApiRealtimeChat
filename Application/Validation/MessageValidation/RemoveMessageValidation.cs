@@ -12,7 +12,7 @@ namespace Application.Validation.MessageValidation
     {
         public RemoveMessageValidation()
         {
-            RuleFor(x=>x.Id).NotNull().NotEmpty();
+            RuleFor(x=>x.ConversationId).NotNull().NotEmpty();
             RuleFor(x => x.MessageId).NotNull().NotEmpty();
         }
     }

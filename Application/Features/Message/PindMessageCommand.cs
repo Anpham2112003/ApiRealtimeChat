@@ -60,7 +60,7 @@ namespace Application.Features.Message
                    User= User,
             
                 };
-                var notification = new Domain.Entities.Message
+                var message = new Domain.Entities.Message
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
                     MessageType = MessageType.Notification,
@@ -70,9 +70,9 @@ namespace Application.Features.Message
 
                 var result = await _unitOfWork.messageRepository.PindMessage(request.ConversationId!,findMessage);
 
-                await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!,notification);
+                await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!,message);
 
-                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, new object[] {notification,pindMessage});
+                await _hub.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, new object[] {message,pindMessage});
 
 
 

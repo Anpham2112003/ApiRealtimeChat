@@ -40,7 +40,7 @@ namespace Application.Features.Message
 
                 var result = await _unitOfWork.messageRepository.UnPindMessage(request.ConversationId!,User.AccountId!, request.MessageId!);
 
-                if (result.MatchedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
+                if (result.MatchedCount == 0) return Result<string>.Failuer(new Error("Message","NotFound"));
 
               
                 var message = new Domain.Entities.Message

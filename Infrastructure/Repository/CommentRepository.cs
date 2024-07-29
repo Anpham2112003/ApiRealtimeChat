@@ -3,6 +3,7 @@ using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using System;
@@ -15,8 +16,11 @@ namespace Infrastructure.Repository
 {
     public class CommentRepository : AbstractRepository<PostCollection>, ICommentRepository
     {
+        private IMongoCollection<BsonDocument> _bsonCollection;
         public CommentRepository(IMongoDB mongoDB) : base(mongoDB)
         {
+            _bsonCollection=mongoDB.GetCollection<BsonDocument>(nameof(PostCollection));
+
             _collection=mongoDB.GetCollection<PostCollection>(nameof(PostCollection));    
         }
 
@@ -55,9 +59,10 @@ namespace Infrastructure.Repository
             return await _collection!.UpdateOneAsync(filter,update, new UpdateOptions { ArrayFilters=arrayFilter});
         }
 
-        public async Task<UpdateResult> RepComment(string AccountId, string PostId, string ParentId, Comment comment)
+        public async Task<BulkWriteResult> RepComment(string AccountId, string PostId, string ParentId, Comment comment)
         {
             var builder = Builders<PostCollection>.Filter;
+            var updateBuilder= Builders<PostCollection>.Update;
 
             var filter = Builders<PostCollection>.Filter.And(
                     builder.Eq(x=>x.AccountId,AccountId),
@@ -68,20 +73,48 @@ namespace Infrastructure.Repository
                     ))
             );
 
-            var update = Builders<PostCollection>.Update
-                .Push("Posts.$[p].Comments", comment);
-
-            var arrayFilter = new[]
+            var PostFilter = new[]
              {
                 new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
                 {
                     {
                         "p._id",ObjectId.Parse(PostId)
                     }
+                }),
+
+            };
+
+            var CommentFilter = new[]
+             {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
+                    }
+                }),
+
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "c._id",ObjectId.Parse(comment.ParentId)
+                    }
                 })
             };
 
-            return await _collection!.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilter });
+
+            var bulket = new WriteModel<PostCollection>[]
+            {
+               new UpdateOneModel<PostCollection>(filter,updateBuilder.Inc("Posts.$[p].TotalComment",1)){ArrayFilters= PostFilter },
+
+               new UpdateOneModel<PostCollection>(filter,updateBuilder.Push("Posts.$[p].Comments",comment)){ArrayFilters= PostFilter },
+
+               new UpdateOneModel<PostCollection>(filter,updateBuilder.Inc("Posts.$[p].Comments.$[c].TotalChildComment",1)){ArrayFilters= CommentFilter },
+            };
+                
+
+            
+
+            return await _collection!.BulkWriteAsync(bulket);
         }
 
         public async Task<UpdateResult> BlockComment(string AccountId,string PostId)
@@ -172,5 +205,482 @@ namespace Infrastructure.Repository
 
             return await _collection!.UpdateOneAsync(filter, update, new UpdateOptions { ArrayFilters = arrayFilter });
         }
+
+        public async Task<IEnumerable<CommentResponseModel>> GetCommentPost(string AccountId, string PostId,int skip,int limit)
+        {
+            var aggry =await _collection.Aggregate()
+                .Match(x => x.AccountId == AccountId)
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$addFields",new BsonDocument
+                        {
+                            {
+                                "FindPost",new BsonDocument
+                                {
+                                    {
+                                        "$arrayElemAt",new BsonArray
+                                        {
+                                            "$Posts",
+
+                                            new BsonDocument
+                                            {
+                                                {
+                                                    "$indexOfArray",new BsonArray
+                                                    {
+                                                        "$Posts._id",ObjectId.Parse(PostId)
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+                .Project<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "FindPost",1
+                    }
+                })
+                .ReplaceRoot<BsonDocument>("$FindPost")
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$addFields",new BsonDocument
+                        {
+                            {
+                                "FilterComment",new BsonDocument
+                                {
+                                    {
+                                        "$cond",new BsonArray
+                                        {
+                                            new BsonDocument
+                                            {
+                                                {
+                                                    "$eq",new BsonArray
+                                                    {
+                                                        "$HiddenComment",false
+                                                    }
+                                                }
+                                            },
+                                            new BsonDocument
+                                            {
+                                                {
+                                                    "$filter",new BsonDocument
+                                                    {
+                                                        {
+                                                            "input","$Comments"
+                                                        },
+                                                        {
+                                                            "as","item"
+                                                        },
+                                                        {
+                                                            "cond",new BsonDocument
+                                                            {
+                                                                {
+                                                                    "$eq",new BsonArray
+                                                                    {
+                                                                        "$$item.ParentId",BsonNull.Value
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+
+                                            BsonNull.Value
+                                            
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+                .Project(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "Comments",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$FilterComment",skip,limit
+                                }
+                            }
+                        }
+                    }
+                }).Unwind("Comments")
+                .ReplaceRoot<BsonDocument>("$Comments")
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup",new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","AccountId"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline",new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project",new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Users"
+                            }
+                        }
+                    }
+                })
+                .ReplaceRoot<BsonDocument>(new BsonDocument
+                {
+                    
+                     {
+                          "$mergeObjects",new BsonArray
+                          {
+                               new BsonDocument
+                               {
+                                   {
+                                       "$arrayElemAt",new BsonArray
+                                       {
+                                                "$Users",0
+                                       }
+                                   }
+                               },
+
+                              "$$ROOT"
+                          }
+                     }
+                    
+                })
+                .Project(new BsonDocument
+                {
+                    {
+                        "Users",0
+                    }
+                }).As<CommentResponseModel>().ToListAsync();
+
+            return aggry;
+        }
+        public async Task<IEnumerable<CommentResponseModel>> GetRepComment(string AccountId, string PostId,string ParentId, int skip, int limit)
+        {
+            var aggry = await _collection.Aggregate()
+                .Match(x => x.AccountId == AccountId)
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$addFields",new BsonDocument
+                        {
+                            {
+                                "FindPost",new BsonDocument
+                                {
+                                    {
+                                        "$arrayElemAt",new BsonArray
+                                        {
+                                            "$Posts",
+
+                                            new BsonDocument
+                                            {
+                                                {
+                                                    "$indexOfArray",new BsonArray
+                                                    {
+                                                        "$Posts._id",ObjectId.Parse(PostId)
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+                .Project<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "FindPost",1
+                    }
+                })
+                .ReplaceRoot<BsonDocument>("$FindPost")
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$addFields",new BsonDocument
+                        {
+                            {
+                                "FilterComment",new BsonDocument
+                                {
+                                    {
+                                        "$cond",new BsonArray
+                                        {
+                                            new BsonDocument
+                                            {
+                                                {
+                                                    "$eq",new BsonArray
+                                                    {
+                                                        "$HiddenComment",false
+                                                    }
+                                                }
+                                            },
+                                            new BsonDocument
+                                            {
+                                                {
+                                                    "$filter",new BsonDocument
+                                                    {
+                                                        {
+                                                            "input","$Comments"
+                                                        },
+                                                        {
+                                                            "as","item"
+                                                        },
+                                                        {
+                                                            "cond",new BsonDocument
+                                                            {
+                                                                {
+                                                                    "$eq",new BsonArray
+                                                                    {
+                                                                        "$$item.ParentId",ObjectId.Parse(ParentId)
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+
+                                            BsonNull.Value
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+                .Project(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "Comments",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$FilterComment",skip,limit
+                                }
+                            }
+                        }
+                    }
+                }).Unwind("Comments")
+                .ReplaceRoot<BsonDocument>("$Comments")
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup",new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","AccountId"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline",new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project",new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Users"
+                            }
+                        }
+                    }
+                })
+                .ReplaceRoot<BsonDocument>(new BsonDocument
+                {
+
+                     {
+                          "$mergeObjects",new BsonArray
+                          {
+                               new BsonDocument
+                               {
+                                   {
+                                       "$arrayElemAt",new BsonArray
+                                       {
+                                                "$Users",0
+                                       }
+                                   }
+                               },
+
+                              "$$ROOT"
+                          }
+                     }
+
+                })
+                .Project(new BsonDocument
+                {
+                    {
+                        "Users",0
+                    }
+                }).As<CommentResponseModel>().ToListAsync();
+
+            return aggry;
+        }
+
+        public async Task<BulkWriteResult>RemoveComment(string AccountId,string MyId,string PostId,string CommentId,string ParentId)
+        {
+
+            var builder = Builders<BsonDocument>.Filter;
+
+            var findChildComment = Builders<BsonDocument>.Filter
+
+           .ElemMatch<BsonValue>("Posts.Comments", new BsonDocument
+                     {
+                        {
+                            "_id",ObjectId.Parse(CommentId)
+                        },
+                        {
+                            "AccountId",ObjectId.Parse(MyId)
+                        }
+           });
+
+            var findParentComment = Builders<BsonDocument>.Filter
+
+
+             .ElemMatch<BsonValue>("Posts.Comments", new BsonDocument
+                     {
+                        {
+                            "_id",ObjectId.Parse(ParentId)
+                        }
+             });
+          
+
+
+            var childCommentFilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
+                    }
+                }),
+
+            };
+
+            var parentCommentFilter = new[]
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "p._id",ObjectId.Parse(PostId)
+                    },
+                    
+                }),
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "c._id",ObjectId.Parse(ParentId)
+                    },
+
+                }),
+
+            };
+
+
+
+
+            var pullChildComment = Builders<BsonDocument>.Update
+                .Inc("Posts.$[p].TotalComment", -1)
+                .PullFilter("Posts.$[p].Comments", Builders<Comment>.Filter.Eq(x=>x.Id,CommentId));
+
+            var updateParentComment = Builders<BsonDocument>.Update
+                .Inc("Posts.$[p].Comments.$[c].TotalChildComment", -1);
+
+
+            var bulket = new WriteModel<BsonDocument>[]
+            {
+                new UpdateOneModel<BsonDocument>(findChildComment,pullChildComment){ArrayFilters=childCommentFilter},
+
+                new UpdateOneModel<BsonDocument>(findParentComment,updateParentComment){ArrayFilters=parentCommentFilter},
+            };
+
+
+            
+
+            return await _bsonCollection!.BulkWriteAsync(bulket);
+
+
+        }
+
     }
 }

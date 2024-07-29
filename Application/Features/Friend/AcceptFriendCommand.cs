@@ -68,7 +68,8 @@ namespace Application.Features.Friend
 
                     await _unitOfWork.notificationRepository.AddNotification(request.Id!, notificaton);
 
-                    await _hubContext.Clients.Group(request.Id!).Notification(notificaton);
+
+                    await _hubContext.Clients.User(request.Id!).Notification(notificaton);
 
                     return Result<Object>.Success();
                 }

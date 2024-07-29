@@ -46,35 +46,47 @@ namespace Application.Features.Conversation
                 if (!checkUserExist) return Result<ConversationResponseModel>.Failuer(new Error("NotFound",""));
                 
                 var conversation = await _unitOfWork.conversationRepository.GetConversation(UserId, request.Id!);
-                
-                if(conversation is null)
+
+                if (conversation is null)
                 {
                     var newConversation = new ConversationCollection
                     {
-                        Id=ObjectId.GenerateNewId().ToString(),
-                        Messages=new List<Domain.Entities.Message> { },
+                        Id = ObjectId.GenerateNewId().ToString(),
+                        Messages = new List<Domain.Entities.Message> { },
                         CreatedAt = DateTime.UtcNow,
-                        Pinds= new List<Domain.Entities.Message> { },
+                        Pinds = new List<Domain.Entities.Message> { },
+                        Wait = new List<ObjectId> { ObjectId.Parse(request.Id) },
                         IsGroup = false,
-                        Owners = new List<ObjectId>() {ObjectId.Parse(UserId),ObjectId.Parse(request.Id!) },
-                        Seen=DateTime.UtcNow,
-                        
+                        Owners = new List<ObjectId>() { ObjectId.Parse(UserId), ObjectId.Parse(request.Id!) },
+                        Seen = DateTime.UtcNow,
+                        IsDelete = false,
+
                     };
 
-                  
-                    
-                    await  _unitOfWork.conversationRepository.InsertAsync(newConversation);
+
+
+                    await _unitOfWork.conversationRepository.InsertAsync(newConversation);
 
                     var notification = new Domain.Entities.Notification
                     {
                         Type = Domain.Enums.NotificationType.NewConversation,
                         Content = newConversation.Id,
-                        
+
                     };
 
-                    await _hubContext.Clients.Groups(UserId,request.Id!).Notification(notification);
-                    
-                    return Result<ConversationResponseModel>.Success(new ConversationResponseModel { Id=newConversation.Id});
+                    await _hubContext.Clients.Users(UserId, request.Id!).Notification(notification);
+
+                    return Result<ConversationResponseModel>.Success(new ConversationResponseModel
+                    {
+                        Id = newConversation.Id,
+                        IsGroup = false,
+                        CreatedAt = DateTime.UtcNow,
+                        Messages = new List<ClientMessageResponseModel> { },
+                        Pinds = new List<ClientMessageResponseModel> { },
+                        Owners=new List<UserResponseModel> { },
+                        Seen = DateTime.UtcNow,
+                    });
+
                 }
 
                 return Result<ConversationResponseModel>.Success(conversation);

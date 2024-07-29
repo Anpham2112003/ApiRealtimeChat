@@ -33,7 +33,7 @@ namespace Application.Features.Coment
 
                 var result = await _unitOfWork.commentRepository.HiddenComment(AccountId,request.PostId!);
 
-                if (result.ModifiedCount == 0) return Result<string>.Failuer(new Error("", ""));
+                if (result.ModifiedCount == 0) return Result<string>.Failuer(new Error("Not found", ""));
 
                 return Result<string>.Success("Ok!");
 

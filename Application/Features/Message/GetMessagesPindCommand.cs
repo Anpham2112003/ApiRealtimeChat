@@ -38,7 +38,7 @@ namespace Application.Features.Message
 
             var result = await _unitOfWork.messageRepository.GetMessagesPind(request.ConversationId!,userId, request.Skip, request.Limit);
 
-            if (result == null) return Result<ScrollPage<ClientMessageResponseModel>>.Failuer(new Error("Not found", "Not found"));
+            if (result == null || !result.Any()) return Result<ScrollPage<ClientMessageResponseModel>>.Failuer(new Error("Not found", "Not found"));
 
             return Result<ScrollPage<ClientMessageResponseModel>>.Success(new ScrollPage<ClientMessageResponseModel>
             {

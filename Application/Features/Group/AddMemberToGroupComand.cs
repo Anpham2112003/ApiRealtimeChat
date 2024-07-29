@@ -50,7 +50,8 @@ namespace Application.Features.Group
                     Type = Domain.Enums.NotificationType.NewConversation,
                     Content = request.Id,
                 };
-                await _context.Clients.Groups(request.MemberId!).Notification(notification);
+
+                await _context.Clients.Users(request.MemberId!).Notification(notification);
 
                 return Result<string>.Success("Ok!");
             }

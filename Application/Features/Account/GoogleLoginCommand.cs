@@ -94,7 +94,8 @@ namespace Application.Features.Account
                     {
                         new Claim(ClaimTypes.Email,account.Email),
                         new Claim(ClaimTypes.PrimarySid,account.Id.ToString()),
-                        new Claim(ClaimTypes.UserData,jsonUser)
+                        new Claim(ClaimTypes.UserData,jsonUser),
+                        new Claim(ClaimTypes.NameIdentifier,account.Id.ToString())
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));
@@ -123,7 +124,8 @@ namespace Application.Features.Account
                     {
                         new Claim(ClaimTypes.Email,check.Email!),
                         new Claim(ClaimTypes.PrimarySid,check.Id!.ToString()),
-                        new Claim(ClaimTypes.UserData,jsonUser)
+                        new Claim(ClaimTypes.UserData,jsonUser),
+                        new Claim(ClaimTypes.NameIdentifier,check.Id.ToString())
                     };
 
                     var accessToken = JwtLibrary.GenerateToken(_options.CurrentValue.AccessKey!, claims, DateTime.UtcNow.AddMinutes(1));

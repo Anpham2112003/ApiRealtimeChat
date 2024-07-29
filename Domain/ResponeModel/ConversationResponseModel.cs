@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Domain.ResponeModel
 {
+    [BsonIgnoreExtraElements]
     public class ConversationResponseModel
     {
         [BsonRepresentation(BsonType.ObjectId)]
@@ -18,10 +19,12 @@ namespace Domain.ResponeModel
         public List<ClientMessageResponseModel>? Pinds { get; set; }
         public bool IsGroup { get; set; }
 
-        [BsonIgnoreIfNull]
+        [BsonIgnoreIfNull()]
+
         public Group? Group { get; set; }
         public DateTime Seen { get; set; }
         public DateTime CreatedAt { get; set; }
+     
 
     }
 }

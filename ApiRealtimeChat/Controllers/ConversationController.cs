@@ -18,7 +18,7 @@ namespace ApiRealtimeChat.Controllers
         }
 
         [Authorize]
-        [HttpGet("conversation/load/{id}")]
+        [HttpGet("conversation/friend/{id}")]
         public async Task<IActionResult>GetSingleConversation(string id)
         {
             var result = await _mediator.Send(new GetConversationCommand() { Id = id });
@@ -42,6 +42,15 @@ namespace ApiRealtimeChat.Controllers
             var result = await _mediator.Send(new GetAllConversationCommand { skip=skip,limit = limit });
 
             return result.IsSuccess?Ok(result.Data):NotFound(result.Error);
+        }
+
+        [Authorize]
+        [HttpGet("conversations/wait")]
+        public async Task<IActionResult> GetWaitConversation([FromQuery] int skip, int limit)
+        {
+            var result = await _mediator.Send(new GetWaitConversation { skip = skip, limit = limit });
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
         }
 
         [Authorize]

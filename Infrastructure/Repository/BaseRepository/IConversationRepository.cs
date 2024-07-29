@@ -15,8 +15,9 @@ namespace Infrastructure.Repository.BaseRepository
         public Task<ConversationResponseModel?> GetConversation(string from, string to);
 
         public Task<List<ConversationResponseModel>> GetAllConversationAsync(string UserId, int skip, int limit);
-        public  Task<DeleteResult> RemoveConversation(string ConversationId);
+        public  Task<UpdateResult> RemoveConversation(string ConversationId,string AccountId);
         public  Task<ConversationResponseModel?> GetConversationByIdAsync(string ConversationId, string UserId);
+        public  Task<List<ConversationResponseModel>> GetWaitConversationAsync(string UserId, int skip, int limit);
         public  Task<IEnumerable<string?>> GetConversationId(string id);
         public  Task<bool> HasInConversation(string conversationId, string MyId);
     }

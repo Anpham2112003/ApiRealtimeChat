@@ -16,6 +16,8 @@ namespace Domain.Enums
 
         NewConversation=3,
 
-        ConversationDelete=4
+        ConversationDelete=4,
+
+        RemoveMessage=5
     }
 }

@@ -14,6 +14,25 @@ namespace ApiRealtimeChat.Controllers
         {
             _mediator = mediator;
         }
+
+
+        [HttpGet("comments")]
+        public async Task<IActionResult> GetComment([FromQuery]string AccountId , string PostId , int Skip,int Limit)
+        {
+            var result = await _mediator.Send(new GetCommentPost(AccountId,PostId,Skip,Limit));
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound();
+        }
+
+        [HttpGet("comment/reps")]
+        public async Task<IActionResult> GetRepComment([FromQuery] string AccountId, string PostId, string ParentId, int Skip, int Limit)
+        {
+            var result = await _mediator.Send(new GetRepComment(AccountId, PostId, ParentId,Skip,Limit));
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound();
+        }
+
+
         [HttpPost("comment/push")]
         public async Task<IActionResult> PushComment([FromForm]CommentPostCommand command)
         {
@@ -56,6 +75,14 @@ namespace ApiRealtimeChat.Controllers
 
         [HttpPost("comment/unhidden")]
         public async Task<IActionResult> UnHiddenComment(UnHiddenCommentCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok(result.Data) : BadRequest();
+        }
+
+        [HttpDelete("comment/delete")]
+        public async Task<IActionResult> UnHiddenComment(DeleteCommentCommand command)
         {
             var result = await _mediator.Send(command);
 

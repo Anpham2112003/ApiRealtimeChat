@@ -17,6 +17,7 @@ namespace Application.Features.Post
     {
         public string? Content {  get; set; }
         public List<IFormFile>? Files { get; set; }
+        public bool AllowComment {  get; set; }
     }
 
     public class HandCreatePostCommand : IRequestHandler<CreatePostCommand, Result<Domain.Entities.Post>>
@@ -46,7 +47,7 @@ namespace Application.Features.Post
                     AccountId=AccountId,
                     Images = fileNames,
                     Likes = 0,
-                    AllowComment=true,
+                    AllowComment=request.AllowComment,
                     TotalComment=0,
                     HiddenComment=false,
                     Comments=new List<Comment> { },

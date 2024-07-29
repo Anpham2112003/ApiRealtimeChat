@@ -53,6 +53,8 @@ namespace Application.Features.Message
                     .Append(Random.Shared.Next(1, 1000000000))
                     .Append(ObjectId.GenerateNewId())
                     .Append(Path.GetExtension(request.File!.FileName));
+
+
                 var AwsPath = _configuration["Aws:Perfix"] + url;
 
 

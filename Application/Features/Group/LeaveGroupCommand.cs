@@ -50,8 +50,10 @@ namespace Application.Features.Group
                     MessageType=Domain.Enums.MessageType.Notification
                     
                 };
-                
+
+
                 await _hubContext.Clients.Group(request.Id!).ReceiveMessage(request.Id!, new object[] { message });
+
 
                 return Result<string>.Success("Success!");
             }

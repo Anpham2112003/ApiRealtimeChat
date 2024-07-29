@@ -127,9 +127,11 @@ builder.Services.AddCors(options =>
         builder =>
         {
             builder
+            .WithOrigins("http://127.0.0.1:3000/", "http://127.0.0.1:3000/")
             .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowAnyOrigin();
+            .AllowAnyOrigin()
+            .AllowAnyHeader();
+            
         });
 });
 

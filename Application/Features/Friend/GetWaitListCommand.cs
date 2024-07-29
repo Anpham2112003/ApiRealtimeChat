@@ -39,6 +39,8 @@ namespace Application.Features.Friend
 
                 var result = await _unitOfWork.friendRepository.GetInfoFromWatiList(accountId!, request.index, request.limit);
 
+                if (result is null || !result.Any()) return Result<ScrollPage<UserResponseModel>>.Failuer(new Error("Not found", "Not Found"));
+
                 var page = new ScrollPage<UserResponseModel>(request.index, request.limit, result);
 
                 return Result<ScrollPage<UserResponseModel>>.Success(page);

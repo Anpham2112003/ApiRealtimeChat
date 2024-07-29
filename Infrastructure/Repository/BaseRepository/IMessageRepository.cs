@@ -12,7 +12,8 @@ namespace Infrastructure.Repository.BaseRepository
     public interface IMessageRepository:BaseRepository<ConversationCollection>
     {
         public Task<UpdateResult> SendMessageAsync(string Id, string UserId, Message message);
-        public Task<UpdateResult> RemoveMessage(string ConversationId, string UserId, string MessageId);
+        public  Task<UpdateResult> SendMessageAsync(string Id, string UserId, IEnumerable<Message> messages);
+        public Task<IEnumerable<string>> RemoveMessage(string ConversationId, string UserId, string MessageId);
         public  Task<UpdateResult> ChangeContentMessage(string ConversationId, string UserId, string MessageId, string Content);
         public Task<UpdateResult> PindMessage(string ConversationId, Message message );
         public Task<UpdateResult> UnPindMessage(string ConversationId,string UserId, string MessageId);

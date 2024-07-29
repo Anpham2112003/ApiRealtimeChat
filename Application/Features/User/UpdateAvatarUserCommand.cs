@@ -44,16 +44,11 @@ namespace Application.Features.User
             {
                 var userId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
-                StringBuilder key = new StringBuilder();
-                key.Append("avatar");
-                key.Append(userId);
-                key.Append(request.Image!.Name);
-                key.Append(ObjectId.GenerateNewId());
-                key.Append(Path.GetExtension(request.Image!.FileName));
+                var key = GenerateRandomFileName.GenerateFromFile(request.Image!);
 
                 var awsUrl = _configuration["Aws:Perfix"] + key.ToString();
 
-                await _awsServices.UploadFileAsync(_configuration["Aws:Bucket"]!, key.ToString(), request.Image);
+                await _awsServices.UploadFileAsync(_configuration["Aws:Bucket"]!, key.ToString(), request.Image!);
 
                 await _unitOfWork.userRepository.UpdateAvatarUser(userId, awsUrl);
 

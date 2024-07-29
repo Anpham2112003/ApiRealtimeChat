@@ -43,6 +43,7 @@ namespace Application.Features.Coment
                     Id = ObjectId.GenerateNewId().ToString(),
                     Content = request.Content,
                     AccountId = AccountId,
+                    PostId = request.PostId,
                     ImageUrl = "",
                     ParentId = request.RepId,
                     TotalChildComment = 0,

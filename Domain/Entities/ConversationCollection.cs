@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    public class ConversationCollection : BaseCollection
+    public class ConversationCollection : BaseCollection,SoftDelete
     {
         public ConversationCollection()
         {
@@ -25,9 +25,10 @@ namespace Domain.Entities
 
         [BsonIgnoreIfNull]
         public Group? Group { get; set; }
-        
+        public List<ObjectId>? Wait { get; set; }
         public DateTime Seen { get; set; }
         public DateTime CreatedAt { get; set; }
-        
+        public bool IsDelete { get; set; }
+        public DateTime DeletedAt { get; set; }
     }
 }

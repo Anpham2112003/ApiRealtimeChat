@@ -203,7 +203,24 @@ namespace Infrastructure.Repository
 
             var update = Builders<ConversationCollection>.Update
                 .Set(x=>x.Seen,DateTime.UtcNow)
+                .Pull(x=>x.Wait,ObjectId.Parse(UserId))
                 .Push(x => x.Messages, message);
+
+            return await _collection!.UpdateOneAsync(filter, update);
+        }
+
+        public async Task<UpdateResult> SendMessageAsync(string Id, string UserId, IEnumerable<Message> messages)
+        {
+            var filter = Builders<ConversationCollection>.Filter
+               .And
+               (
+                   Builders<ConversationCollection>.Filter.Eq(x => x.Id, Id),
+                   Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(UserId))
+                );
+
+            var update = Builders<ConversationCollection>.Update
+                .Set(x => x.Seen, DateTime.UtcNow)
+                .PushEach(x => x.Messages, messages);
 
             return await _collection!.UpdateOneAsync(filter, update);
         }
@@ -254,7 +271,7 @@ namespace Infrastructure.Repository
 
             return query; 
         }
-        public async Task<UpdateResult> RemoveMessage(string ConversationId, string UserId,string MessageId)
+        public async Task<IEnumerable<string>> RemoveMessage(string ConversationId, string UserId,string MessageId)
         {
             var filter = Builders<ConversationCollection>.Filter.And
                 (
@@ -278,8 +295,9 @@ namespace Infrastructure.Repository
                     }
                 })
             };
+            var projection = Builders<ConversationCollection>.Projection.Expression(x => x.Owners!.Select(x=>x.ToString()));
 
-            var result = await _collection!.UpdateOneAsync(filter, update,new UpdateOptions { ArrayFilters=arrayilter} );
+            var result = await _collection!.FindOneAndUpdateAsync(filter, update,new FindOneAndUpdateOptions<ConversationCollection, IEnumerable<string>> {ArrayFilters=arrayilter,Projection=projection} );
             
             return result;
         }

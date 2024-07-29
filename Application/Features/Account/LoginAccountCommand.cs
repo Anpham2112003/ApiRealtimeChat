@@ -69,7 +69,7 @@ namespace Application.Features.Account
                     new Claim(ClaimTypes.Email, request.Email!),
                     new Claim(ClaimTypes.PrimarySid,checkAccount.Id!.ToString()),
                     new Claim(ClaimTypes.UserData,jsonUser),
-                    
+                    new Claim(ClaimTypes.NameIdentifier,checkAccount.Id.ToString()),
                 };
 
                 

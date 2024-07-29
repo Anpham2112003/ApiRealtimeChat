@@ -22,7 +22,7 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
-        [Authorize]
+       
 
         [HttpPost("auth/signup")]
         public async Task<IActionResult> CreateAccount(CreateAccountCommand command)

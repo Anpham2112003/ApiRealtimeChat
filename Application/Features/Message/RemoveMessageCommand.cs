@@ -1,8 +1,11 @@
-﻿using Domain.Errors;
+﻿using Domain.Enums;
+using Domain.Errors;
 using Domain.Ultils;
+using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +16,7 @@ namespace Application.Features.Message
 {
     public class RemoveMessageCommand:IRequest<Result<string>>
     {
-        public string? Id { get; set; }
+        public string? ConversationId { get; set; }
         public string? MessageId { get; set;}
     }
 
@@ -21,11 +24,12 @@ namespace Application.Features.Message
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _httpContextAccessor;
-
-        public HandRemoveMessageCommand(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor)
+        private readonly IHubContext<HubService,IHubServices> _hubContext ;
+        public HandRemoveMessageCommand(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, IHubContext<HubService, IHubServices> hubContext)
         {
             _unitOfWork = unitOfWork;
             _httpContextAccessor = httpContextAccessor;
+            _hubContext = hubContext;
         }
 
         public async Task<Result<string>> Handle(RemoveMessageCommand request, CancellationToken cancellationToken)
@@ -34,9 +38,17 @@ namespace Application.Features.Message
             {
                 var UserId = _httpContextAccessor.HttpContext!.User.GetIdFromClaim();
 
-                var result = await _unitOfWork.messageRepository.RemoveMessage(request.Id!, UserId, request.MessageId!);
+                var result = await _unitOfWork.messageRepository.RemoveMessage(request.ConversationId!, UserId, request.MessageId!);
 
-                if (result.MatchedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
+                if (result is null ||  !result.Any() ) return Result<string>.Failuer(ConversationError.NotFound);
+
+                var notification = new Domain.Entities.Notification
+                {
+                    Type = NotificationType.RemoveMessage,
+                    Content = $"{request.ConversationId}:{request.MessageId}"
+                };
+
+                await _hubContext.Clients.Users(result).Notification(notification);
 
                 return Result<string>.Success("Ok!");
             }
