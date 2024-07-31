@@ -32,8 +32,8 @@ namespace Domain.Ultils
 
         public override bool IsValid(ValidationContext<T> context, TProperty value)
         {
-            
-           
+
+            if (value == null) return true;
 
             if (typeof(TProperty).Equals(typeof(IFormFile)) && value is not null){
 

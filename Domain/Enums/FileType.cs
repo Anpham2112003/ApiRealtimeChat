@@ -10,6 +10,6 @@ namespace Domain.Enums
     {
         Image = MessageType.Image,
         File=MessageType.File,
-       
+        Video=MessageType.Video,
     }
 }

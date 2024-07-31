@@ -1,5 +1,7 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
@@ -43,15 +45,15 @@ namespace Application.Features.Group
 
                 var result = await _unitOfWork.groupRepository.AddManyMemberToGroup(UserId,request.Id!, request.MemberId!);
 
-                if (result.MatchedCount.Equals(0)) return Result<string>.Failuer(GroupError.GroupNotFound);
+                if (result.MatchedCount.Equals(0)) return Result<string>.Failuer(new Error("Not Found","Group not found or User exist in group"));
 
-                var notification = new Domain.Entities.Notification
+                var eventMessage = new Event
                 {
-                    Type = Domain.Enums.NotificationType.NewConversation,
-                    Content = request.Id,
+                    EventType = EventType.NewConversation,
+                    EventMessage = request.Id,
                 };
 
-                await _context.Clients.Users(request.MemberId!).Notification(notification);
+                await _context.Clients.Users(request.MemberId!).Event(eventMessage);
 
                 return Result<string>.Success("Ok!");
             }

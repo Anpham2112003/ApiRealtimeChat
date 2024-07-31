@@ -1,4 +1,6 @@
-﻿using Domain.Errors;
+﻿using Domain.Enums;
+using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
@@ -41,14 +43,14 @@ namespace Application.Features.Conversation
 
                 if (result.ModifiedCount == 0) return Result<string>.Failuer(new Error("", ""));
                 
-                var message = new Domain.Entities.Notification
+                var message = new Event
                 {
-                    Type = Domain.Enums.NotificationType.ConversationDelete,
+                    EventType = EventType.DeleteConversation,
 
-                    Content = request.Id,
+                    EventMessage = request.Id,
                 };
 
-                await _hubContext.Clients.User(UserId).Notification(message);
+                await _hubContext.Clients.User(UserId).Event(message);
                     
                 
                 return Result<string>.Success(request.Id);

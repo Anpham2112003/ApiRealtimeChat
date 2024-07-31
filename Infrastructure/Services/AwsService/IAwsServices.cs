@@ -7,12 +7,12 @@ using Amazon;
 using Amazon.S3;
 using Microsoft.AspNetCore.Http;
 
-namespace Infrastructure.Services
+namespace Infrastructure.Services.AwsService
 {
     public interface IAwsServices
     {
-       
-        public Task UploadFileAsync(string bucket,string key, IFormFile file);
-        public Task RemoveFileAsync(string bucket,string key);
+
+        public Task UploadFileAsync(string bucket, string key, IFormFile file);
+        public Task RemoveFileAsync(string bucket, string key);
     }
 }

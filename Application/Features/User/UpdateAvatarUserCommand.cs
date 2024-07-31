@@ -3,7 +3,8 @@ using Application.Errors;
 using Domain.Entities;
 using Domain.ResponeModel;
 using Domain.Ultils;
-using Infrastructure.Services;
+using Infrastructure.Services.AwsService;
+using Infrastructure.Services.FileService;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -30,12 +31,14 @@ namespace Application.Features.User
         private readonly IAwsServices _awsServices;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _contextAccessor;
-        public HandUpdateAvartaUser(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration, IHttpContextAccessor contextAccessor)
+        private readonly IFileService _fileService;
+        public HandUpdateAvartaUser(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration, IHttpContextAccessor contextAccessor, IFileService fileService)
         {
             _unitOfWork = unitOfWork;
             _awsServices = awsServices;
             _configuration = configuration;
             _contextAccessor = contextAccessor;
+            _fileService = fileService;
         }
 
         public async Task<Result<UploadAvatarResponeModel>> Handle(UpdateAvatarUserCommand request, CancellationToken cancellationToken)
@@ -44,17 +47,27 @@ namespace Application.Features.User
             {
                 var userId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
-                var key = GenerateRandomFileName.GenerateFromFile(request.Image!);
+                if (request.Image ==null) return Result<UploadAvatarResponeModel>.Failuer(new Error("File", "File null"));
 
-                var awsUrl = _configuration["Aws:Perfix"] + key.ToString();
+                var fileName = GenerateRandomFileName.GenerateFromFile(request.Image!);
 
-                await _awsServices.UploadFileAsync(_configuration["Aws:Bucket"]!, key.ToString(), request.Image!);
+               
 
-                await _unitOfWork.userRepository.UpdateAvatarUser(userId, awsUrl);
+               var storePath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads","Images");
 
-              
+                var filePath = Path.Combine("Uploads","Images", fileName);
+
+                await _fileService.WriteFileAsync(storePath,fileName, request.Image!);
+
+                await _unitOfWork.userRepository.UpdateAvatarUser(userId, filePath);
+
+                //var awsUrl = _configuration["Aws:Perfix"] + key.ToString();
+
+                //await _awsServices.UploadFileAsync(_configuration["Aws:Bucket"]!, fileName.ToString(), request.Image!);
+
+
                 return Result<UploadAvatarResponeModel>
-                    .Success(new UploadAvatarResponeModel("Upload success!", userId, awsUrl));
+                    .Success(new UploadAvatarResponeModel("Upload success!", userId, filePath));
             }
             catch (Exception e)
             {

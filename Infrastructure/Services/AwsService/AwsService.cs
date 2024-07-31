@@ -7,12 +7,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Services
+namespace Infrastructure.Services.AwsService
 {
     public class AwsService : IAwsServices
     {
         private readonly IAmazonS3 _amazonS3;
-        
+
         public AwsService(IAmazonS3 amazonS3)
         {
             _amazonS3 = amazonS3;
@@ -28,7 +28,7 @@ namespace Infrastructure.Services
             await _amazonS3.DeleteObjectAsync(objectRequest);
         }
 
-        public async Task UploadFileAsync(string bucket,string key, IFormFile file)
+        public async Task UploadFileAsync(string bucket, string key, IFormFile file)
         {
 
             var objectRequest = new PutObjectRequest()
@@ -38,10 +38,10 @@ namespace Infrastructure.Services
                 Key = key,
                 CannedACL = S3CannedACL.PublicRead,
                 AutoResetStreamPosition = true,
-                InputStream=file.OpenReadStream()
+                InputStream = file.OpenReadStream()
             };
 
-          await _amazonS3.PutObjectAsync(objectRequest);
+            await _amazonS3.PutObjectAsync(objectRequest);
 
         }
     }

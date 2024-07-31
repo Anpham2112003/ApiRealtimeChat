@@ -45,48 +45,70 @@ namespace Infrastructure.Repository
 
             var aggy = await _collection.Aggregate()
                 .Match(filter)
-                .AppendStage<BsonDocument>(new BsonDocument
+                .Project(new BsonDocument
                 {
                     {
-                        "$addFields", new BsonDocument
+                        "Owners",new BsonDocument
                         {
                             {
-                                "sliceOwner", new BsonDocument
+                                "$slice",new BsonArray
                                 {
-                                    {
-                                        "$slice", new BsonArray
-                                        {
-                                            "$Owners",
-                                            -2
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "sliceMessage", new BsonDocument
-                                {
-                                    {
-                                        "$slice", new BsonArray
-                                        {
-                                            "$Messages",
-                                            -10
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "slicePinds",new BsonDocument
-                                {
-                                    {
-                                        "$slice",new BsonArray
-                                        {
-                                            "$Pinds",-1
-                                        }
-                                    }
+                                    "$Owners",-2
                                 }
                             }
-                    }   }
+                        }
+
+                    },
+                    {
+                        "Pinds",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$Pinds",-1
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Messages",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$Messages",-10
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "IsGroup",1
+                    },
+                    {
+                        "Group", new BsonDocument
+                        {
+                            {
+                                "Name",1
+                            },
+                            {
+                                "Avatar",1
+                            },
+                            {
+                                "TotalMember",1
+                            },
+                            {
+                                "UpdatedAt",1
+                            }
+                        }
+                    },
+                    {
+                        "Seen",1
+                    },
+                    {
+                        "CreatedAt",1
+                    }
                 })
+                
                 .AppendStage<BsonDocument>(new BsonDocument
                 {
                     {
@@ -96,7 +118,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","slicePinds.AccountId"
+                                "localField","Pinds.AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -146,7 +168,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","sliceOwner"
+                                "localField","Owners"
                             },
                             {
                                 "foreignField","AccountId"
@@ -194,7 +216,7 @@ namespace Infrastructure.Repository
                                 "from",nameof (UserCollection)
                             },
                             {
-                                "localField", "sliceMessage.AccountId"
+                                "localField", "Messages.AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -431,53 +453,72 @@ namespace Infrastructure.Repository
 
             var aggry = await _collection.Aggregate()
                 .Match(filter)
-                .AppendStage<BsonDocument>(new BsonDocument
+                .Project<BsonDocument>(new BsonDocument
                 {
-               
                     {
-                        "$addFields",new BsonDocument
+                        "_id",1
+                    },
+                    {
+                        "Owners",new BsonDocument
                         {
                             {
-                                "sliceMessage",new BsonDocument
+                                "$slice",new BsonArray
                                 {
-                                    {
-                                        "$slice", new BsonArray
-                                        {
-                                            "$Messages",-10
-                                        }
-                                    }
+                                    "$Owners",-2
                                 }
-                            },
-                            {
-                                "sliceOwner", new BsonDocument
-                                {
-                                    {
-                                        "$slice",new BsonArray
-                                        {
-                                            "$Owners",-2
-                                        }
-                                    }
-                                }
-
-                            },
-                            {
-                                "slicePind", new BsonDocument
-                                {
-                                    {
-                                        "$slice",new BsonArray
-                                        {
-                                            "$Pinds",-1
-                                        }
-                                    }
-                                }
-
-                            },
-
-                         }
+                            }
+                        }
                     },
-                   
-
+                    {
+                        "Pinds",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$Pinds",-1
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Messages",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$Messages",-10
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "IsGroup",1
+                    },
+                    {
+                        "Group", new BsonDocument
+                        {
+                            {
+                                "Name",1
+                            },
+                            {
+                                "Avatar",1
+                            },
+                            {
+                                "TotalMember",1
+                            },
+                            {
+                                "UpdatedAt",1
+                            }
+                        }
+                    },
+                    {
+                        "Seen",1
+                    },
+                    {
+                        "CreatedAt",1
+                    }
                 })
+                
                 
 
                 .AppendStage<BsonDocument>(new BsonDocument
@@ -489,7 +530,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","sliceOwner"
+                                "localField","Owners"
                             },
                             {
                                 "foreignField","AccountId"
@@ -537,7 +578,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","slicePind.AccountId"
+                                "localField","Pinds.AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -585,7 +626,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","sliceMessage.AccountId"
+                                "localField","Messages.AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -638,7 +679,7 @@ namespace Infrastructure.Repository
                                 "$map", new BsonDocument
                                 {
                                     {
-                                        "input","$slicePind"
+                                        "input","$Pinds"
                                     },
                                     {
                                         "as","item"
@@ -711,7 +752,7 @@ namespace Infrastructure.Repository
                                 "$map", new BsonDocument
                                 {
                                     {
-                                        "input","$sliceMessage"
+                                        "input","$Messages"
                                     },
                                     {
                                         "as","item"
@@ -1234,6 +1275,46 @@ namespace Infrastructure.Repository
 
             var aggry = await _collection.Aggregate()
                  .Match(filter)
+                 .Project(new BsonDocument
+                 {
+                     {
+                         "_id",1
+                     },
+                     {
+                         "Owners",1
+                     },
+                     {
+                         "Messages",new BsonDocument
+                         {
+                             {
+                                 "$slice",new BsonArray
+                                 {
+                                     "$Messages",-10
+                                 }
+                             }
+                         }
+                         
+                     },
+
+                     {
+                         "Pinds",new BsonDocument
+                         {
+                             {
+                                 "$slice",new BsonArray
+                                 {
+                                     "$Pinds",-1
+                                 }
+                             }
+                         }
+                     },
+                     {
+                         "CreatedAt",1
+                     },
+                     {
+                         "Seen",1
+                     }
+
+                 })
                  .AppendStage<BsonDocument>(new BsonDocument
                  {
                      {
@@ -1282,38 +1363,7 @@ namespace Infrastructure.Repository
                          }
                      }
                  })
-                 .AppendStage<BsonDocument>(new BsonDocument
-                 {
-                    {
-                        "$addFields", new BsonDocument
-                        {
-                            {
-                                "sliceMessage",new BsonDocument
-                                {
-                                    {
-                                        "$slice", new BsonArray
-                                        {
-                                            "$Messages",-10
-                                        }
-                                    }
-                                }
-                            },
-                            
-                            {
-                                "slicePinds", new BsonDocument
-                                {
-                                    {
-                                        "$slice", new BsonArray
-                                        {
-                                            "$Pinds",-10
-                                    }   }
-                                }
-                            }
-                            
-                            
-                        }
-                    }
-                 })
+                 
                 
                     
                
@@ -1330,7 +1380,7 @@ namespace Infrastructure.Repository
                                  "$map", new BsonDocument
                                  {
                                      {
-                                         "input","$sliceMessage"
+                                         "input","$Messages"
                                      },
                                      {
                                          "as","item"
@@ -1408,7 +1458,7 @@ namespace Infrastructure.Repository
                                  "$map", new BsonDocument
                                  {
                                      {
-                                         "input", "$slicePinds"
+                                         "input", "$Pinds"
                                      },
                                      {
                                          "as","item"
@@ -1475,6 +1525,9 @@ namespace Infrastructure.Repository
                      },
                      {
                          "CreatedAt",1
+                     },
+                     {
+                         "Seen",1
                      }
                  }).As<ConversationResponseModel>().FirstOrDefaultAsync();
 
@@ -1502,7 +1555,13 @@ namespace Infrastructure.Repository
 
         public async Task<IEnumerable<string?>> GetConversationId(string id)
         {
-            var filter = Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(id));
+            var builder = Builders<ConversationCollection>.Filter;
+
+            var filter = Builders<ConversationCollection>.Filter.And(
+
+                builder.Eq("Owners", ObjectId.Parse(id)),
+                builder.Ne("Wait",ObjectId.Parse(id))
+            );
 
             var project = Builders<ConversationCollection>.Projection.Expression(x=>x.Id!.ToString());
 
@@ -1520,6 +1579,20 @@ namespace Infrastructure.Repository
             );
 
             return await _collection.Find(filter).AnyAsync();
+        }
+
+        public async Task<UpdateResult> AllowConversation(string ConversationId,string MyId)
+        {
+            var builder = Builders<ConversationCollection>.Filter;
+
+            var filter = Builders<ConversationCollection>.Filter.And(
+                    builder.Eq(x => x.Id, ConversationId),
+                    builder.Eq("Wait", ObjectId.Parse(MyId))
+            );
+
+            var update = Builders<ConversationCollection>.Update.Pull(x => x.Wait, ObjectId.Parse(MyId));
+
+            return await _collection!.UpdateOneAsync(filter, update);
         }
     }
         

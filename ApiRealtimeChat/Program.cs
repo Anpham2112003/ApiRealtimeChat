@@ -123,15 +123,13 @@ builder.Services.AddAuthentication(op =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: "Angular",
+    options.AddDefaultPolicy(
         builder =>
         {
-            builder
-            .WithOrigins("http://127.0.0.1:3000/", "http://127.0.0.1:3000/")
-            .AllowAnyMethod()
-            .AllowAnyOrigin()
-            .AllowAnyHeader();
-            
+            builder.WithOrigins("http://127.0.0.1:3000")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
         });
 });
 
@@ -173,7 +171,7 @@ app.UseAuthorization();
 
 app.UseMiddleware<ValidationExceptionHandlingMiddleware>();
 
-app.UseCors("Angular");
+app.UseCors();
 
 app.MapControllers();
 

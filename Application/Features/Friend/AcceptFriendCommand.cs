@@ -65,9 +65,9 @@ namespace Application.Features.Friend
                 {
                     var result = await _unitOfWork.friendRepository.AcceptFriend(User.AccountId!, request.Id!);
 
-
                     await _unitOfWork.notificationRepository.AddNotification(request.Id!, notificaton);
 
+                    await _unitOfWork.notificationRepository.RemoveNotification(User.AccountId!,request.Id!,Domain.Enums.NotificationType.InviteFriend);
 
                     await _hubContext.Clients.User(request.Id!).Notification(notificaton);
 

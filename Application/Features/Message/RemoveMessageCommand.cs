@@ -1,5 +1,6 @@
 ﻿using Domain.Enums;
 using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
@@ -42,13 +43,13 @@ namespace Application.Features.Message
 
                 if (result is null ||  !result.Any() ) return Result<string>.Failuer(ConversationError.NotFound);
 
-                var notification = new Domain.Entities.Notification
+                var eventMessage = new Event
                 {
-                    Type = NotificationType.RemoveMessage,
-                    Content = $"{request.ConversationId}:{request.MessageId}"
+                     EventType= EventType.RemoveMessage,
+                     EventMessage = $"{request.ConversationId}:{request.MessageId}"
                 };
 
-                await _hubContext.Clients.Users(result).Notification(notification);
+                await _hubContext.Clients.Users(result).Event(eventMessage);
 
                 return Result<string>.Success("Ok!");
             }

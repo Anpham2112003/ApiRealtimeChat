@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Services
+namespace Domain.Enums
 {
-    public interface IMailerServices
+    public enum EventType
     {
-        public Task SendMailAsync( MailContent content);
+        NewConversation =0,
+        DeleteConversation=1,
+        RemoveMessage=2
     }
 }

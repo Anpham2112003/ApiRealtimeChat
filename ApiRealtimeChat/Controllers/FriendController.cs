@@ -18,6 +18,29 @@ namespace ApiRealtimeChat.Controllers
             _mediator = mediator;
         }
 
+        
+
+        [Authorize]
+
+        [HttpGet("friends")]
+        public async Task<IActionResult> GetFriend([FromQuery] int skip, int limit)
+        {
+            var result = await _mediator.Send(new GetFriendCommand(skip, limit));
+
+            return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
+        }
+
+
+        [Authorize]
+        [HttpGet("friend/invites")]
+        public async Task<IActionResult> GetFromWaiList([FromQuery] GetWaitListCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.Data is null ? NotFound() : Ok(result.Data);
+        }
+
+
         [Authorize]
         [HttpGet("friend/search")]
         public async Task<IActionResult> Search([FromQuery]string name)
@@ -29,7 +52,7 @@ namespace ApiRealtimeChat.Controllers
 
         [Authorize]
 
-        [HttpGet("friends/group/{id}")]
+        [HttpGet("friends/ngroup/{id}")]
         public async Task<IActionResult> GetFriendNotInGroup(string id,[FromQuery] int skip,int limit)
         {
             var result = await _mediator.Send(new GetFriendNotInGroupCommand(id, skip, limit));
@@ -55,24 +78,7 @@ namespace ApiRealtimeChat.Controllers
             return result.IsSuccess?Ok(result.Data):BadRequest(result.Error);
         }
 
-        [Authorize]
-        [HttpGet("friend/invites")]
-        public async Task<IActionResult> GetFromWaiList([FromQuery]GetWaitListCommand command)
-        {
-            var result = await _mediator.Send(command);
-
-            return result.Data is null?NotFound():Ok(result.Data);
-        }
-
-        [Authorize]
-
-        [HttpGet("friends")]
-        public async Task<IActionResult> GetFriend([FromQuery] int skip, int limit)
-        {
-            var result = await _mediator.Send(new GetFriendCommand( skip, limit));
-
-            return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
-        }
+       
 
         [Authorize]
 

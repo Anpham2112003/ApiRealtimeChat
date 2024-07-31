@@ -17,4 +17,10 @@
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Uploads\Files\" />
+    <Folder Include="Uploads\Images\" />
+    <Folder Include="Uploads\Videos\" />
+  </ItemGroup>
+
 </Project>

@@ -46,21 +46,21 @@ namespace Application.Features.Message
             try
             {
 
-                    var User = _contextAccessor.HttpContext!.User.GetUserFromToken();
+                 var User = _contextAccessor.HttpContext!.User.GetUserFromToken();
 
 
-                    var message = new Domain.Entities.Message
-                    {
-                        Id = ObjectId.GenerateNewId().ToString(),
-                        AccountId = User.AccountId,
-                        Content = request.Content,
-                        MessageType = MessageType.Message,
-                        CreatedAt = DateTime.UtcNow,
-                    };
+                var message = new Domain.Entities.Message
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    AccountId = User.AccountId,
+                    Content = request.Content,
+                    MessageType = MessageType.Message,
+                    CreatedAt = DateTime.UtcNow,
+                };
 
                     var result = await _unitOfWork.messageRepository.SendMessageAsync(request.Id!, User.AccountId!, message);
 
-                    if (result.ModifiedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
+                if (result.ModifiedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
 
                 var messageReceiver = new ClientMessageResponseModel
                 {
@@ -74,7 +74,7 @@ namespace Application.Features.Message
 
                 };
 
-                    await _hub.Clients.Group(request.Id!).ReceiveMessage (request.Id!, new object[] { messageReceiver });
+                await _hub.Clients.Group(request.Id!).ReceiveMessage (request.Id!, new object[] { messageReceiver });
 
                     return Result<string>.Success("Ok");
                 

@@ -23,7 +23,7 @@ namespace ApiRealtimeChat.Controllers
         {
             var result = await _mediator.Send(new GetConversationCommand() { Id = id });
 
-            return Ok(result.Data);
+            return result.IsSuccess? Ok(result.Data) :BadRequest(result.Error);
         }
 
         [Authorize]
@@ -51,6 +51,15 @@ namespace ApiRealtimeChat.Controllers
             var result = await _mediator.Send(new GetWaitConversation { skip = skip, limit = limit });
 
             return result.IsSuccess ? Ok(result.Data) : NotFound(result.Error);
+        }
+
+        [Authorize]
+        [HttpPut("conversation/allow")]
+        public async Task<IActionResult> GetWaitConversation(AllowConversationCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            return result.IsSuccess ? Ok(result.Data) : BadRequest(result.Error);
         }
 
         [Authorize]

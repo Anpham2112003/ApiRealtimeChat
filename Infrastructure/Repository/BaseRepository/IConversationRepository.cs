@@ -20,5 +20,6 @@ namespace Infrastructure.Repository.BaseRepository
         public  Task<List<ConversationResponseModel>> GetWaitConversationAsync(string UserId, int skip, int limit);
         public  Task<IEnumerable<string?>> GetConversationId(string id);
         public  Task<bool> HasInConversation(string conversationId, string MyId);
+        public  Task<UpdateResult> AllowConversation(string ConversationId, string MyId);
     }
 }

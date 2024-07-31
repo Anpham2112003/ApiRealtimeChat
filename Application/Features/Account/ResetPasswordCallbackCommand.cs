@@ -2,6 +2,7 @@
 using Domain.Entities;
 using Domain.Ultils;
 using Infrastructure.Services;
+using Infrastructure.Services.MailService;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.Extensions.Configuration;

@@ -2,7 +2,8 @@
 using Domain.Entities;
 using Domain.ResponeModel;
 using Domain.Ultils;
-using Infrastructure.Services;
+using Infrastructure.Services.AwsService;
+using Infrastructure.Services.FileService;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -28,13 +29,15 @@ namespace Application.Features.User
         private readonly IAwsServices _awsServices;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IFileService _fileService;
 
-        public HandRemoveAvatarUserCommand(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration, IHttpContextAccessor contextAccessor)
+        public HandRemoveAvatarUserCommand(IUnitOfWork unitOfWork, IAwsServices awsServices, IConfiguration configuration, IHttpContextAccessor contextAccessor, IFileService fileService)
         {
             _unitOfWork = unitOfWork;
             _awsServices = awsServices;
             _configuration = configuration;
             _contextAccessor = contextAccessor;
+            _fileService = fileService;
         }
 
 
@@ -49,7 +52,11 @@ namespace Application.Features.User
 
                 if (string.IsNullOrEmpty(user!.Avatar)) return Result<string>.Failuer(UserError.AvatarNull);
 
-                await _awsServices.RemoveFileAsync(_configuration["Aws:Bucket"]!, user.Avatar.Split('/').Last()) ;
+                //await _awsServices.RemoveFileAsync(_configuration["Aws:Bucket"]!, user.Avatar.Split('/').Last()) ;
+
+                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), user.Avatar);
+
+                _fileService.RemoveFile(imagePath);
 
                 await _unitOfWork.userRepository.RemoveAvatarUser(user.AccountId!);
 

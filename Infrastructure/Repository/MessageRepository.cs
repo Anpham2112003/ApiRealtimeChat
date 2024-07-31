@@ -30,29 +30,26 @@ namespace Infrastructure.Repository
 
             var aggry = await _collection.Aggregate()
                 .Match(x => x.Id == ConversationId)
-                .AppendStage<BsonDocument>(new BsonDocument
+                .Project<BsonDocument>(new BsonDocument
                 {
                     {
-                        "$addFields", new BsonDocument
+                        "_id",0
+                    },
+                    {
+                        "Messages",new BsonDocument
                         {
                             {
-                                "sliceMessage", new BsonDocument
+                                "$slice",new BsonArray
                                 {
-                                    {
-                                        "$slice", new BsonArray
-                                        {
-                                            "$Messages",skip, limit
-                                        }
-                                    }
+                                    "$Messages",skip,limit
                                 }
                             }
                         }
-                    },
-                    
-
-
+                    }
                 })
-                 .AppendStage<BsonDocument>(new BsonDocument
+                .Unwind("Messages")
+                .ReplaceRoot<BsonDocument>("$Messages")
+                .AppendStage<BsonDocument>(new BsonDocument
                 {
                      {
                         "$lookup", new BsonDocument
@@ -61,7 +58,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","sliceMessage.AccountId"
+                                "localField","AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -100,80 +97,50 @@ namespace Infrastructure.Repository
                         }
                     }
                 })
-
-
-                .Project(new BsonDocument
+                .ReplaceRoot<BsonDocument>(new BsonDocument
                 {
                     {
-                        "_id",0
-                    },
-                    {
-                        "Messages", new BsonDocument
+                        "$mergeObjects",new BsonArray
                         {
+                            "$$ROOT",
+                            new BsonDocument
                             {
-                                "$map", new BsonDocument
+                                {
+                                    "User",new BsonDocument
+                                    {
+                                        {
+                                            "$arrayElemAt",new BsonArray
+                                            {
+                                                "$Users",0
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                new BsonDocument
                                 {
                                     {
-                                        "input","$sliceMessage"
-                                    },
-                                    {
-                                        "as","item"
-                                    },
-                                    {
-                                        "in", new BsonDocument
+                                        "Content",new BsonDocument
                                         {
-                                            
                                             {
-                                                "$mergeObjects", new BsonArray
+                                                "$cond",new BsonArray
                                                 {
-                                                    "$$item",new BsonDocument
-                                                    {
-                                                        {
-                                                            "User", new BsonDocument
-                                                            {
-                                                                {
-                                                                    "$arrayElemAt", new BsonArray
-                                                                    {
-                                                                        "$Users",
-                                                                        new BsonDocument
-                                                                        {
-                                                                            {
-                                                                                "$indexOfArray", new BsonArray
-                                                                                {
-                                                                                    "$Users.AccountId",
-                                                                                    "$$item.AccountId"
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    },
                                                     new BsonDocument
                                                     {
                                                         {
-                                                            "Content",new BsonDocument
+                                                            "$eq",new BsonArray
                                                             {
-                                                                {
-                                                                    "$cond", new BsonArray
-                                                                    {
-                                                                        new BsonDocument
-                                                                        {
-                                                                            {
-                                                                                "$eq", new BsonArray
-                                                                                {
-                                                                                    "$$item.IsDelete",true
-                                                                                }
-                                                                            }
-                                                                        },
-                                                                        "Message was deleted!",
-                                                                        "$$item.Content"
-                                                                    }
-                                                                }
+                                                                
+                                                                 "$$CURRENT.IsDelete",true
+                                                                
                                                             }
                                                         }
-                                                    }
+                                                    },
+
+                                                    "Message was delete",
+
+                                                    "$$CURRENT.Content"
                                                 }
                                             }
                                         }
@@ -183,8 +150,15 @@ namespace Infrastructure.Repository
                         }
                     }
                 })
-                .Unwind("Messages")
-                .ReplaceRoot<BsonDocument>("$Messages")
+
+
+                .Project(new BsonDocument
+                {
+                    {
+                        "Users",0
+                    }
+                    
+                })
                 .As<ClientMessageResponseModel>().ToListAsync();
 
 
@@ -203,7 +177,6 @@ namespace Infrastructure.Repository
 
             var update = Builders<ConversationCollection>.Update
                 .Set(x=>x.Seen,DateTime.UtcNow)
-                .Pull(x=>x.Wait,ObjectId.Parse(UserId))
                 .Push(x => x.Messages, message);
 
             return await _collection!.UpdateOneAsync(filter, update);
@@ -350,6 +323,25 @@ namespace Infrastructure.Repository
 
             var result = await _collection.Aggregate()
                 .Match(filter)
+                .Project(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "Pinds",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$Pinds",skip,limit
+                                }
+                            }
+                        }
+                    }
+                })
+                .Unwind("Pinds")
+                .ReplaceRoot<BsonDocument>("$Pinds")
                 .AppendStage<BsonDocument>(new BsonDocument
                 {
                     {
@@ -359,7 +351,7 @@ namespace Infrastructure.Repository
                                 "from",nameof(UserCollection)
                             },
                             {
-                                "localField","Pinds.AccountId"
+                                "localField","AccountId"
                             },
                             {
                                 "foreignField","AccountId"
@@ -396,76 +388,49 @@ namespace Infrastructure.Repository
                             {"as","Users" }
                         }
                     }
-                }).Project(new BsonDocument
+                })
+                .ReplaceRoot<BsonDocument>(new BsonDocument
                 {
                     {
-                        "_id",0
-                    },
-                    {
-                        "Pinds", new BsonDocument
+                        "$mergeObjects",new BsonArray
                         {
+                            "$$ROOT",
+                            new BsonDocument
                             {
-                                "$map", new BsonDocument
                                 {
+                                    "User",new BsonDocument
                                     {
-                                        "input","$Pinds"
-                                    },
-                                    {
-                                        "as","item"
-                                    },
-                                    {
-                                        "in",new BsonDocument
                                         {
+                                            "$arrayElemAt",new BsonArray
                                             {
-                                                "$mergeObjects",new BsonArray
+                                                 "$Users",0
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            new BsonDocument
+                            {
+                                {
+                                    "Content",new BsonDocument
+                                    {
+                                        {
+                                            "$cond",new BsonArray
+                                            {
+                                                new BsonDocument
                                                 {
-                                                    "$$item", new BsonDocument
                                                     {
+                                                        "$eq",new BsonArray
                                                         {
-                                                            "User", new BsonDocument
-                                                            {
-                                                                {
-                                                                    "$arrayElemAt", new BsonArray
-                                                                    {
-                                                                        "$Users", new BsonDocument
-                                                                        {
-                                                                            {
-                                                                                "$indexOfArray", new BsonArray
-                                                                                {
-                                                                                    "$Users.AccountId","$$item.AccountId"
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    new BsonDocument
-                                                    {
-                                                        {
-                                                            "Content",new BsonDocument
-                                                            {
-                                                                {
-                                                                    "$cond", new BsonArray
-                                                                    {
-                                                                        new BsonDocument
-                                                                        {
-                                                                            {
-                                                                                "$eq",new BsonArray
-                                                                                {
-                                                                                    "$$item.IsDelete",true
-                                                                                }
-                                                                            }
-                                                                        },
-                                                                        "Message was deleted!",
-                                                                        "$$item.Content"
-                                                                    }
-                                                                }
-                                                            }
+                                                            "$$CURRENT.IsDelete",true
                                                         }
                                                     }
-                                                }
+                                                },
+
+                                                "Message was delete!",
+
+                                                "$$CURRENT.Content"
+                                                
                                             }
                                         }
                                     }
@@ -474,8 +439,12 @@ namespace Infrastructure.Repository
                         }
                     }
                 })
-                .Unwind("Pinds")
-                .ReplaceRoot<BsonDocument>("$Pinds")
+                .Project(new BsonDocument
+                {
+                    {
+                        "Users",0
+                    }
+                })
                 .As<ClientMessageResponseModel>()
                 .ToListAsync();
 

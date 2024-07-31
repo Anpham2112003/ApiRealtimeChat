@@ -4,6 +4,7 @@ using Domain.Errors;
 using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services;
+using Infrastructure.Services.FileService;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
 using MediatR;
@@ -30,16 +31,14 @@ namespace Application.Features.Message
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
-        private readonly IAwsServices _awsServices;
         private readonly IHubContext<HubService,IHubServices> _hubContext;
-        private readonly IConfiguration _configuration;
-        public HandSendFileCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor, IAwsServices awsServices, IHubContext<HubService, IHubServices> hubContext, IConfiguration configuration)
+        private readonly IFileService _fileService;
+        public HandSendFileCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor,  IHubContext<HubService, IHubServices> hubContext, IFileService fileService)
         {
             _unitOfWork = unitOfWork;
             _contextAccessor = contextAccessor;
-            _awsServices = awsServices;
             _hubContext = hubContext;
-            _configuration = configuration;
+            _fileService = fileService;
         }
 
         public async Task<Result<string>> Handle(SendFileCommand request, CancellationToken cancellationToken)
@@ -48,21 +47,41 @@ namespace Application.Features.Message
             {
                 var user = _contextAccessor.HttpContext!.User.GetUserFromToken();
 
+                if (request.File ==null) return Result<string>.Failuer(new Error("File null", "File Null"));
+
+                var fileName =Path.GetRandomFileName()+ Path.GetExtension(request.File!.FileName);
+
                 var url = new StringBuilder();
-                url.Append("File")
-                    .Append(Random.Shared.Next(1, 1000000000))
-                    .Append(ObjectId.GenerateNewId())
-                    .Append(Path.GetExtension(request.File!.FileName));
 
+                if (request.Type == FileType.Image)
+                {
+                    url.Append(Path.Combine( "Uploads", "Images"));
 
-                var AwsPath = _configuration["Aws:Perfix"] + url;
+                }
+
+                else if (request.Type == FileType.File)
+                {
+                    url.Append(Path.Combine("Uploads", "Files"));
+                }
+
+                else if (request.Type == FileType.Video)
+                {
+                    url.Append(Path.Combine( "Uploads", "Videos"));
+                }
+
+                else
+                {
+                    throw new Exception("File type upload invalid");
+                }
+                    
+              
 
 
                 var message = new Domain.Entities.Message
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
                     AccountId = user.AccountId,
-                    Content = AwsPath,
+                    Content =  Path.Combine(url.ToString(),fileName),
                     MessageType = (MessageType)request.Type,
                     CreatedAt = DateTime.UtcNow,
                     IsDelete = false,
@@ -85,7 +104,8 @@ namespace Application.Features.Message
                     User = user
                 };
 
-                await _awsServices.UploadFileAsync(_configuration["Aws:Bucket"]!, url.ToString(), request.File);
+
+                await _fileService.WriteFileAsync(url.ToString(), fileName, request.File);
 
                 await _hubContext.Clients.Groups(request.Id!).ReceiveMessage(request.Id!, new object[] {messageReceiver});
 

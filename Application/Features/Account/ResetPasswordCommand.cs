@@ -1,6 +1,7 @@
 ﻿using Application.Errors;
 using Domain.Ultils;
 using Infrastructure.Services;
+using Infrastructure.Services.MailService;
 using Infrastructure.Unit0fWork;
 using MailKit;
 using MediatR;

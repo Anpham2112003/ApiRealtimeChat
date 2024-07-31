@@ -67,14 +67,13 @@ namespace Application.Features.Conversation
 
                     await _unitOfWork.conversationRepository.InsertAsync(newConversation);
 
-                    var notification = new Domain.Entities.Notification
+                    var eventMessage = new Event
                     {
-                        Type = Domain.Enums.NotificationType.NewConversation,
-                        Content = newConversation.Id,
-
+                        EventType = Domain.Enums.EventType.NewConversation,
+                        EventMessage = request.Id,
                     };
 
-                    await _hubContext.Clients.Users(UserId, request.Id!).Notification(notification);
+                    await _hubContext.Clients.Users(UserId, request.Id!).Event(eventMessage);
 
                     return Result<ConversationResponseModel>.Success(new ConversationResponseModel
                     {

@@ -50,7 +50,8 @@ namespace Infrastructure.Repository
                 .Filter.And(
                     Builders<ConversationCollection>.Filter.Eq(x => x.Id, GroupId),
                     Builders<ConversationCollection>.Filter.Eq("Owners", ObjectId.Parse(MyId)),
-                    Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, true)
+                    Builders<ConversationCollection>.Filter.Eq(x => x.IsGroup, true),
+                    Builders<ConversationCollection>.Filter.Nin("Owners",ObjIds)
                 );
 
             var update = Builders<ConversationCollection>

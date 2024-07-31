@@ -12,6 +12,8 @@ namespace Domain.Entities
     {
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
         public string? Id {  get; set; }
+
+        [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
         public string? From { get; set; }
         public string? Content { get; set; }
         public NotificationType Type { get; set; }

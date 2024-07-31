@@ -12,7 +12,9 @@ namespace Domain.Enums
         Image=1,
         File=2,
         PindMessage = 3,
-        Notification =4,
-       
+        UnpindMessage=4,
+        Notification =5,
+        Video=6
+
     }
 }

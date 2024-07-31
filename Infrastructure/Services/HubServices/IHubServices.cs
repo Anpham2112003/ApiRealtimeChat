@@ -14,7 +14,8 @@ namespace Infrastructure.Services.HubServices
 
         public Task Notification(object message);
 
-        public Task Connection(string message, int state);
+        public Task Connection(string message);
+        public Task Event(object message);
 
     }
 }

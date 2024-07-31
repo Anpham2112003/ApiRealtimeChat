@@ -59,8 +59,9 @@ namespace Infrastructure.Repository
 
                    Builders<FriendCollection>.Filter.Eq(x => x.AccountId, FriendId),
 
-                   Builders<FriendCollection>
-                                    .Update.Push(x=>x.Friends,new Friend(AccountId))
+                   Builders<FriendCollection>.Update
+                                    .Pull(x=>x.WaitList,ObjectId.Parse(AccountId))
+                                    .Push(x=>x.Friends,new Friend(AccountId))
 
             )  { IsUpsert= true },
 

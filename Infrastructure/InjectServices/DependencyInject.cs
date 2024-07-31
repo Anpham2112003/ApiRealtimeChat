@@ -12,11 +12,13 @@ using System.Reflection;
 using Amazon;
 using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
-using Infrastructure.Services;
 using Amazon.S3;
 using Microsoft.AspNetCore.Http;
 using StackExchange.Redis;
 using Infrastructure.Services.RedisSevices;
+using Infrastructure.Services.FileService;
+using Infrastructure.Services.MailService;
+using Infrastructure.Services.AwsService;
 
 
 namespace Infrastructure.InjectServices
@@ -52,6 +54,8 @@ namespace Infrastructure.InjectServices
             services.AddHttpContextAccessor();
 
             services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect("localhost"));
+
+            services.AddScoped<IFileService, FileService>();
 
             services.AddScoped<IRedisService,RedisSevice>();
 

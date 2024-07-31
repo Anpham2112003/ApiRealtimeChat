@@ -9,7 +9,7 @@ using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Services
+namespace Infrastructure.Services.MailService
 {
     public class MailerServices : IMailerServices
     {
@@ -20,7 +20,7 @@ namespace Infrastructure.Services
             _setting = setting;
         }
 
-        public async Task SendMailAsync( MailContent content)
+        public async Task SendMailAsync(MailContent content)
         {
             var builder = new BodyBuilder();
             builder.HtmlBody = content.Content;
@@ -28,32 +28,32 @@ namespace Infrastructure.Services
             var message = new MimeMessage();
 
             message.Sender = new MailboxAddress(_setting.Value.DispayName, _setting.Value.Email);
-            message.From.Add(new MailboxAddress(_setting.Value.DispayName,_setting.Value.Email));
-            message.To.Add( MailboxAddress.Parse(content.To)) ;
+            message.From.Add(new MailboxAddress(_setting.Value.DispayName, _setting.Value.Email));
+            message.To.Add(MailboxAddress.Parse(content.To));
             message.Subject = content.Subject;
-            message.Body=builder.ToMessageBody();
+            message.Body = builder.ToMessageBody();
 
             using var smtp = new MailKit.Net.Smtp.SmtpClient();
             try
             {
 
-                await  smtp.ConnectAsync(_setting.Value.Host,int.Parse(_setting.Value.Port!),true);
+                await smtp.ConnectAsync(_setting.Value.Host, int.Parse(_setting.Value.Port!), true);
 
                 await smtp.AuthenticateAsync(_setting.Value.Email, _setting.Value.Password);
 
                 await smtp.SendAsync(message);
 
-                
+
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 throw;
             }
-            
+
         }
 
-       
+
     }
     public class MailContent
     {

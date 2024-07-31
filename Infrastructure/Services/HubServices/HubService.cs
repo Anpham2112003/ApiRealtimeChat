@@ -97,7 +97,7 @@ namespace Infrastructure.Services.HubServices
 
             await JoinGroups(ids!);
 
-            await Clients.Client(Context.ConnectionId).Connection("Connected ",0);
+            await Clients.Caller.Connection("Connected ");
 
             await base.OnConnectedAsync();
         }
@@ -110,7 +110,7 @@ namespace Infrastructure.Services.HubServices
 
             await _redisService.SetHashValueToRedis(UserId, new HashEntry[] { new HashEntry("State", "1") });
 
-            await Clients.Client(Context.ConnectionId).Connection("Disconnected",1);
+            await Clients.Caller.Connection("Disconnected");
 
             await base.OnDisconnectedAsync(exception);
         }

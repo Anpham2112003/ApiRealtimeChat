@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Ultils;
+using Infrastructure.Services.FileService;
 using Infrastructure.Unit0fWork;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -24,11 +25,13 @@ namespace Application.Features.Coment
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IFileService _fileService;
 
-        public HandCommentPostCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor)
+        public HandCommentPostCommand(IUnitOfWork unitOfWork, IHttpContextAccessor contextAccessor, IFileService fileService)
         {
             _unitOfWork = unitOfWork;
             _contextAccessor = contextAccessor;
+            _fileService = fileService;
         }
 
         public async Task<Result<Comment>> Handle(CommentPostCommand request, CancellationToken cancellationToken)
@@ -37,11 +40,17 @@ namespace Application.Features.Coment
             {
                 var AccountId = _contextAccessor.HttpContext!.User.GetIdFromClaim();
 
-                var filename = GenerateRandomFileName.GenerateFromFile(request.File!);
+                var filename = ObjectId.GenerateNewId()+Path.GetExtension(request.File!.FileName);
+
+                var storePath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Images");
+
+                var imagepath = new StringBuilder();
 
                 if (request.File != null)
                 {
+                    imagepath.Append(Path.Combine("Uploads", "Images", filename));
 
+                    await _fileService.WriteFileAsync(storePath,filename, request.File);
                 }
 
 
@@ -51,14 +60,21 @@ namespace Application.Features.Coment
                     AccountId = AccountId,
                     PostId=request.PostId,
                     Content = request.Content,
-                    ImageUrl = filename,
+                    ImageUrl = imagepath.ToString(),
                     TotalChildComment = 0,
                     CreatedAt = DateTime.UtcNow,
                 };
 
                 var result = await _unitOfWork.commentRepository.PushComment(request.AccountId!,request.PostId!, comment);
 
-                if (result.MatchedCount == 0) return Result<Comment>.Failuer(new Error("Comment", "Comment was block"));
+                if (result.MatchedCount == 0)
+                {
+                    _fileService.RemoveFile(Path.Combine(storePath, filename));
+
+                    return Result<Comment>.Failuer(new Error("Comment", "Comment was block"));
+                }
+
+                
 
                 return Result<Comment>.Success(comment);
             }

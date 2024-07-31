@@ -51,9 +51,17 @@ namespace Application.Features.Message
                     CreatedAt = DateTime.UtcNow,
                 };
 
+                var unpind = new Domain.Entities.Message
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    MessageType = Domain.Enums.MessageType.UnpindMessage,
+                    Content = $"{request.ConversationId}:{request.MessageId} ",
+                    CreatedAt = DateTime.UtcNow,
+                };
+
                 await _unitOfWork.messageRepository.SendMessageAsync(request.ConversationId!,User.AccountId!, message);
 
-                await _hubContext.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, new object[] {message});
+                await _hubContext.Clients.Group(request.ConversationId!).ReceiveMessage(request.ConversationId!, new object[] {message,unpind});
 
 
                 return Result<string>.Success("Ok!");

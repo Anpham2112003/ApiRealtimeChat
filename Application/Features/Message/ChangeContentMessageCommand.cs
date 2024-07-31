@@ -37,7 +37,7 @@ namespace Application.Features.Message
 
                 var result = await _unitOfWork.messageRepository.ChangeContentMessage(request.Id!, UserId, request.MessageId!, request.Content!);
 
-                if (result.MatchedCount == 0) return Result<string>.Failuer(ConversationError.NotFound);
+                if (result.MatchedCount == 0) return Result<string>.Failuer(new Error("Not found","Conversation not found or Message not exist in List Message"));
 
                 return Result<string>.Success(request.MessageId);
             }

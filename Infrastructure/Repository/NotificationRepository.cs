@@ -1,7 +1,9 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
+using Domain.ResponeModel;
 using Infrastructure.MongoDBContext;
 using Infrastructure.Repository.BaseRepository;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -40,15 +42,109 @@ namespace Infrastructure.Repository
         }
 
 
-        public async Task<NotificationCollection> GetNotification(string Id , int skip, int limit)
+        public async Task<IEnumerable<NotificationResponseModel>> GetNotification(string Id , int skip, int limit)
         {
-            var  filter = Builders<NotificationCollection>.Filter.Eq(x=>x.AccountId,Id);
+            var aggry =await _collection.Aggregate()
+                .Match(x => x.AccountId == Id)
+                .Project(new BsonDocument
+                {
+                    {
+                        "_id",0
+                    },
+                    {
+                        "Notifications",new BsonDocument
+                        {
+                            {
+                                "$slice",new BsonArray
+                                {
+                                    "$Notifications",skip,limit
+                                }
+                            }
+                        }
+                    }
+                })
+                .Unwind("Notifications")
+                .ReplaceRoot<BsonDocument>("$Notifications")
+                .AppendStage<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$lookup",new BsonDocument
+                        {
+                            {
+                                "from",nameof(UserCollection)
+                            },
+                            {
+                                "localField","From"
+                            },
+                            {
+                                "foreignField","AccountId"
+                            },
+                            {
+                                "pipeline",new BsonArray
+                                {
+                                    new BsonDocument
+                                    {
+                                        {
+                                            "$project",new BsonDocument
+                                            {
+                                                {
+                                                    "_id",0
+                                                },
+                                                {
+                                                    "AccountId",1
+                                                },
+                                                {
+                                                    "FullName",1
+                                                },
+                                                {
+                                                    "Avatar",1
+                                                },
+                                                {
+                                                    "State",1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                "as","Users"
+                            }
+                        }
+                    }
+                }).ReplaceRoot<BsonDocument>(new BsonDocument
+                {
+                    {
+                        "$mergeObjects",new BsonArray
+                        {
+                            "$$ROOT",
 
-            var projection= Builders<NotificationCollection>.Projection
-                .Include(x=>x.AccountId)
-                .Slice(x=>x.Notifications,skip,limit);
+                            new BsonDocument
+                            {
+                                {
+                                    "$arrayElemAt",new BsonArray
+                                    {
+                                        "$Users",0
+                                    }
+                                }
+                            },
 
-            return await _collection.Find(filter).Project<NotificationCollection>(projection).FirstOrDefaultAsync();
+                        }
+                    }
+                })
+                .Project(new BsonDocument
+                {
+                    {
+                        "From",0
+                    },
+                    {
+                        "Users",0
+                    }
+                })
+                .As<NotificationResponseModel>().ToListAsync();
+
+            return aggry;
+                
         }
 
         public async Task<UpdateResult> RemoveNotification(string Id, string NotificationId)

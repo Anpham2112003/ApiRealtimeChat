@@ -14,10 +14,5 @@ namespace Domain.Enums
 
         AppcectFriend=2,
 
-        NewConversation=3,
-
-        ConversationDelete=4,
-
-        RemoveMessage=5
     }
 }

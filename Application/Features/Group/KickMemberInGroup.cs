@@ -1,5 +1,6 @@
 ﻿using Domain.Enums;
 using Domain.Errors;
+using Domain.ResponeModel;
 using Domain.Ultils;
 using Infrastructure.Services.HubServices;
 using Infrastructure.Unit0fWork;
@@ -42,20 +43,20 @@ namespace Application.Features.Group
 
                 var Member = await _unitOfWork.groupRepository.FindMemberInGroup(request.Id!, request.MemberId!);
 
-                if (User is null || Member is null) return Result<string>.Failuer(GroupError.UserNotFound);
+                if (User is null || Member is null) return Result<string>.Failuer(new Error("Not found",""));
 
 
                 if (User.Role.Equals(GroupRoles.Admin) && Member.Role.Equals(GroupRoles.Member) || User.Role.Equals(GroupRoles.Created))
                 {
                     await _unitOfWork.groupRepository.KickMemberInGroup(request.Id!, request.MemberId!);
 
-                    var notification = new Domain.Entities.Notification
+                    var eventMessage = new Event
                     {
-                        Type = NotificationType.ConversationDelete,
-                        Content = request.Id
+                        EventType = EventType.DeleteConversation,
+                        EventMessage = request.Id
                     };
 
-                    await _hubContext.Clients.User(request.MemberId!).Notification(notification);
+                    await _hubContext.Clients.User(request.MemberId!).Event(eventMessage);
 
                     return Result<string>.Success("Ok!");
                 }
